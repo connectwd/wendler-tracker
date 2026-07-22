@@ -224,7 +224,7 @@ export function buildNextCycle(previousCycle: Cycle, lifts: LiftConfig[], startD
 }
 
 export function buildFirstCycle(
-  lifts: LiftConfig[],
+  _lifts: LiftConfig[],
   trainingMaxes: Record<string, number>,
   startDate: string
 ): Cycle {
