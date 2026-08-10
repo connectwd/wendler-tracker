@@ -10,8 +10,10 @@ import {
   generateWorkoutsForCycle,
   buildFirstCycle,
   buildNextCycle,
+  regenerateWorkoutForNewTrainingMax,
 } from './wendler';
-import type { LiftConfig, Settings } from '../types';
+import type { LiftConfig, Settings, Workout } from '../types';
+import { DEFAULT_SETTINGS } from './db';
 
 // Every expected value here was checked against a real logged cycle from the
 // spreadsheet this app replaced - not just re-derived from the same formula.
@@ -116,10 +118,8 @@ describe('cycle and workout generation', () => {
     { id: 'squat', name: 'Squat', dayOfWeek: 2, order: 2, cycleIncrement: 3 },
   ];
   const settings: Settings = {
-    units: 'kg',
-    barWeight: 20,
+    ...DEFAULT_SETTINGS,
     roundingIncrement: 2.5,
-    bodyweight: null,
     onboardingComplete: true,
   };
 
@@ -148,5 +148,69 @@ describe('cycle and workout generation', () => {
     expect(cycle2.cycleNumber).toBe(2);
     expect(cycle2.trainingMaxes.bench).toBe(169.5);
     expect(cycle2.trainingMaxes.squat).toBe(111);
+  });
+});
+
+describe('regenerateWorkoutForNewTrainingMax (correcting a Training Max mid-cycle)', () => {
+  const round = 2.5;
+
+  function freshWorkout(week: 1 | 2 | 3 | 4 = 1): Workout {
+    const w = generateWorkoutsForCycle(
+      { id: 'c1', cycleNumber: 1, startDate: '2026-07-14', trainingMaxes: { bench: 166.5 }, status: 'active', completedDate: null },
+      [{ id: 'bench', name: 'Bench Press', dayOfWeek: 1, order: 0, cycleIncrement: 3 }],
+      { ...DEFAULT_SETTINGS, roundingIncrement: round, onboardingComplete: true }
+    ).find((w) => w.week === week)!;
+    return w;
+  }
+
+  it('recomputes every set to match the corrected TM when nothing has been logged yet', () => {
+    const workout = freshWorkout(1);
+    const corrected = regenerateWorkoutForNewTrainingMax(workout, 150, round);
+    // Week 1 main work at TM 150: 65/75/85% -> 97.5/112.5/127.5
+    expect(corrected.mainSets.map((s) => s.targetWeight)).toEqual([97.5, 112.5, 127.5]);
+    expect(corrected.warmupSets.every((s) => s.targetWeight < corrected.mainSets[0].targetWeight)).toBe(true);
+    expect(corrected.bbsSets[0].targetWeight).toBe(97.5); // FSL week 1 = 65%, same as main set 1
+  });
+
+  it('leaves already-completed sets exactly as logged, only touching pending ones', () => {
+    const workout = freshWorkout(1);
+    const loggedFirstMainSet = { ...workout.mainSets[0], completed: true, actualWeight: 107.5, actualReps: 5 };
+    const partiallyLogged: Workout = { ...workout, mainSets: [loggedFirstMainSet, workout.mainSets[1], workout.mainSets[2]] };
+
+    const corrected = regenerateWorkoutForNewTrainingMax(partiallyLogged, 150, round);
+
+    // The already-logged set is untouched, old TM's weight and all.
+    expect(corrected.mainSets[0]).toEqual(loggedFirstMainSet);
+    // The still-pending sets picked up the new TM.
+    expect(corrected.mainSets[1].targetWeight).toBe(112.5);
+    expect(corrected.mainSets[2].targetWeight).toBe(127.5);
+  });
+
+  it('does not mark previously-pending sets as completed, or touch actualReps/actualWeight on them', () => {
+    const workout = freshWorkout(1);
+    const corrected = regenerateWorkoutForNewTrainingMax(workout, 150, round);
+    for (const set of [...corrected.warmupSets, ...corrected.mainSets, ...corrected.bbsSets]) {
+      expect(set.completed).toBe(false);
+      expect(set.actualReps).toBeNull();
+      expect(set.actualWeight).toBeNull();
+    }
+  });
+
+  it('preserves week-specific rep scheme and AMRAP flag while updating weight', () => {
+    const workout = freshWorkout(3); // week 3: 5/3/1+ reps, last set AMRAP
+    const corrected = regenerateWorkoutForNewTrainingMax(workout, 150, round);
+    expect(corrected.mainSets.map((s) => s.targetReps)).toEqual([5, 3, 1]);
+    expect(corrected.mainSets.map((s) => s.isAmrap)).toEqual([false, false, true]);
+  });
+
+  it('leaves unrelated workout fields (id, cycleId, liftId, week, status, accessories) untouched', () => {
+    const workout = freshWorkout(2);
+    const corrected = regenerateWorkoutForNewTrainingMax(workout, 150, round);
+    expect(corrected.id).toBe(workout.id);
+    expect(corrected.cycleId).toBe(workout.cycleId);
+    expect(corrected.liftId).toBe(workout.liftId);
+    expect(corrected.week).toBe(workout.week);
+    expect(corrected.status).toBe(workout.status);
+    expect(corrected.accessories).toEqual(workout.accessories);
   });
 });

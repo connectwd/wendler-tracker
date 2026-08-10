@@ -223,6 +223,9 @@ export function buildNextCycle(previousCycle: Cycle, lifts: LiftConfig[], startD
   };
 }
 
+/** `lifts` isn't used in the body - kept only so this has the same call
+ * shape as buildNextCycle (which does need it, to carry TMs forward). The
+ * underscore keeps noUnusedParameters happy without changing any call site. */
 export function buildFirstCycle(
   _lifts: LiftConfig[],
   trainingMaxes: Record<string, number>,
@@ -235,5 +238,36 @@ export function buildFirstCycle(
     trainingMaxes,
     status: 'active',
     completedDate: null,
+  };
+}
+
+/**
+ * Recomputes target weights for a workout's not-yet-completed sets against a
+ * corrected Training Max - used when fixing an onboarding mistake (a mis-entered
+ * or over-generous rep max) mid-cycle. Any set that's already been logged at the
+ * gym (`completed: true`) is left exactly as it was: that's a real historical
+ * record of what actually happened, not a prescription this function should be
+ * rewriting after the fact. Only pending sets' targetWeight/targetReps/isAmrap
+ * get refreshed to match the new number.
+ */
+export function regenerateWorkoutForNewTrainingMax(
+  workout: Workout,
+  newTrainingMax: number,
+  roundingIncrement: number
+): Workout {
+  function mergeSets(existing: LoggedSet[], prescriptions: SetPrescription[]): LoggedSet[] {
+    return existing.map((set, i) => {
+      if (set.completed) return set;
+      const p = prescriptions[i];
+      if (!p) return set;
+      return { ...set, targetWeight: p.targetWeight, targetReps: p.targetReps, isAmrap: p.isAmrap };
+    });
+  }
+
+  return {
+    ...workout,
+    warmupSets: mergeSets(workout.warmupSets, generateWarmupSets(newTrainingMax, roundingIncrement)),
+    mainSets: mergeSets(workout.mainSets, generateMainWorkSets(newTrainingMax, workout.week, roundingIncrement)),
+    bbsSets: mergeSets(workout.bbsSets, generateBbsSets(newTrainingMax, workout.week, roundingIncrement)),
   };
 }

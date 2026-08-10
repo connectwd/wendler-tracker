@@ -1,5 +1,6 @@
 import type { AppData, SyncConfig, SyncPayload } from '../types';
 import { SCHEMA_VERSION } from '../types';
+import { utf8ToBase64, base64ToUtf8 } from './base64';
 
 const API_BASE = 'https://api.github.com';
 
@@ -17,20 +18,6 @@ export class SyncConflictError extends Error {
     this.remotePayload = remotePayload;
     this.remoteSha = remoteSha;
   }
-}
-
-function utf8ToBase64(str: string): string {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-
-function base64ToUtf8(b64: string): string {
-  const binary = atob(b64.replace(/\n/g, ''));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
 }
 
 function contentsUrl(config: SyncConfig): string {

@@ -48,7 +48,7 @@ export function Dashboard({ activeCycle, lifts, workouts, onOpenWorkout, onStart
     .filter((w): w is Workout => !!w);
 
   return (
-    <div className="screen">
+    <div className="screen screen-decorated">
       <p className="eyebrow">Cycle {activeCycle.cycleNumber}</p>
       <h1>{WEEK_LABELS[selectedWeek]}</h1>
 

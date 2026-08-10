@@ -1,4 +1,8 @@
-const CACHE_NAME = 'wendler-tracker-v1';
+// __BUILD_ID__ is replaced at build time (see vite.config.ts) with a unique value per
+// deploy. This is what makes browsers actually notice a new version: they detect service
+// worker updates by byte-diffing this file, so if it never changes, they never re-install
+// it - even if the app's own JS/CSS bundles changed underneath it.
+const CACHE_NAME = 'wendler-tracker-__BUILD_ID__';
 const CORE_ASSETS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppData } from './hooks/useAppData';
 import { Onboarding } from './components/Onboarding';
 import { Dashboard } from './components/Dashboard';
@@ -8,7 +8,10 @@ import { ProgressCharts } from './components/ProgressCharts';
 import { SettingsView } from './components/SettingsView';
 import { SyncConflictScreen } from './components/SyncConflictScreen';
 import { ErrorBanner } from './components/ErrorBanner';
+import { UpdateToast } from './components/UpdateToast';
 import { bestE1RMExcluding } from './lib/stats';
+import { registerServiceWorker, applyUpdate } from './lib/pwa';
+import { initBackHandling } from './lib/backNav';
 
 type View = 'dashboard' | 'progress' | 'settings';
 
@@ -27,7 +30,11 @@ export default function App() {
     updateLifts,
     saveWorkout,
     startNextCycle,
+    updateLiftTrainingMax,
     reloadAll,
+    bodyweightEntries,
+    logBodyweight,
+    deleteBodyweightEntry,
     syncConfig,
     syncStatus,
     syncState,
@@ -40,6 +47,26 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard');
   const [openWorkoutId, setOpenWorkoutId] = useState<string | null>(null);
   const [reviewingNewCycle, setReviewingNewCycle] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  useEffect(() => {
+    registerServiceWorker(() => setUpdateAvailable(true));
+  }, []);
+
+  // Installed (standalone) PWAs have no browser chrome of their own, so
+  // Android's back gesture/button falls through to closing the app entirely
+  // unless a screen change actually pushed real browser history for it to
+  // pop instead. WorkoutSession, RestTimer, and NewCycleReview each register
+  // themselves via useBackable when they open; this just wires up the one
+  // shared listener that routes a back gesture to whichever of them is
+  // currently open. See lib/backNav.ts for the full explanation.
+  useEffect(() => {
+    initBackHandling();
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme;
+  }, [settings.theme]);
 
   if (loading) {
     return (
@@ -69,10 +96,13 @@ export default function App() {
       <div className="app-shell">
         {appError && <ErrorBanner error={appError} onDismiss={dismissError} />}
         <SyncConflictScreen
-          local={{ settings, lifts, cycles, workouts }}
+          local={{ settings, lifts, cycles, workouts, bodyweightEntries }}
           conflict={pendingConflict}
           onResolve={resolveConflict}
         />
+        {updateAvailable && (
+          <UpdateToast onRefresh={applyUpdate} onDismiss={() => setUpdateAvailable(false)} />
+        )}
       </div>
     );
   }
@@ -103,6 +133,7 @@ export default function App() {
           allWorkouts={workouts}
           onSave={saveWorkout}
           onClose={() => setOpenWorkoutId(null)}
+          onUpdateSettings={updateSettings}
         />
       ) : reviewingNewCycle && activeCycle ? (
         <NewCycleReview
@@ -127,19 +158,30 @@ export default function App() {
           onStartNextCycle={() => setReviewingNewCycle(true)}
         />
       ) : view === 'progress' ? (
-        <ProgressCharts lifts={lifts} cycles={cycles} workouts={workouts} settings={settings} />
+        <ProgressCharts
+          lifts={lifts}
+          cycles={cycles}
+          workouts={workouts}
+          settings={settings}
+          bodyweightEntries={bodyweightEntries}
+          onLogBodyweight={logBodyweight}
+          onDeleteBodyweightEntry={deleteBodyweightEntry}
+        />
       ) : (
         <SettingsView
           settings={settings}
           lifts={lifts}
+          activeCycle={activeCycle}
           onUpdateSettings={updateSettings}
           onUpdateLifts={updateLifts}
+          onUpdateLiftTrainingMax={updateLiftTrainingMax}
           onDataRestored={reloadAll}
           syncConfig={syncConfig}
           syncStatus={syncStatus}
           syncState={syncState}
           onUpdateSyncConfig={updateSyncConfig}
           onSyncNow={syncNow}
+          onNavigateToProgress={() => setView('progress')}
         />
       )}
 
@@ -159,6 +201,8 @@ export default function App() {
           </button>
         </nav>
       )}
+
+      {updateAvailable && <UpdateToast onRefresh={applyUpdate} onDismiss={() => setUpdateAvailable(false)} />}
     </div>
   );
 }

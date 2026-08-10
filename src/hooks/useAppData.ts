@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AppData, Cycle, LiftConfig, Settings, Workout } from '../types';
+import type { AppData, BodyweightEntry, Cycle, LiftConfig, Settings, Workout } from '../types';
 import * as db from '../lib/db';
-import { buildFirstCycle, buildNextCycle, generateWorkoutsForCycle } from '../lib/wendler';
+import { buildFirstCycle, buildNextCycle, generateWorkoutsForCycle, regenerateWorkoutForNewTrainingMax } from '../lib/wendler';
+import { buildBodyweightEntry, latestBodyweight } from '../lib/bodyweight';
 import { makeAppError, type AppError } from '../lib/errors';
 import { useGitHubSync, type UseGitHubSyncReturn } from './useGitHubSync';
 
@@ -24,7 +25,19 @@ interface UseAppDataReturn extends Omit<UseGitHubSyncReturn, 'syncError'> {
   updateLifts: (lifts: LiftConfig[]) => Promise<void>;
   saveWorkout: (workout: Workout) => Promise<void>;
   startNextCycle: (overrideTMs?: Record<string, number>) => Promise<void>;
+  /**
+   * Corrects a single lift's Training Max in the active cycle (e.g. an
+   * onboarding mistake or an over-generous estimate). Recalculates target
+   * weights on any not-yet-logged workouts for that lift still in the
+   * current cycle; anything already logged at the gym is left untouched.
+   * No-ops if there's no active cycle.
+   */
+  updateLiftTrainingMax: (liftId: string, newTrainingMax: number) => Promise<void>;
   reloadAll: () => Promise<void>;
+  bodyweightEntries: BodyweightEntry[];
+  /** Logs (or overwrites, same date) one weigh-in. Also updates `settings.bodyweight` to whichever entry is now the most recent, so the two never drift apart. */
+  logBodyweight: (date: string, weight: number) => Promise<void>;
+  deleteBodyweightEntry: (id: string) => Promise<void>;
 }
 
 const EMPTY_DATA: AppData = {
@@ -32,6 +45,7 @@ const EMPTY_DATA: AppData = {
   lifts: [],
   cycles: [],
   workouts: [],
+  bodyweightEntries: [],
 };
 
 export function useAppData(): UseAppDataReturn {
@@ -112,14 +126,19 @@ export function useAppData(): UseAppDataReturn {
       const startDate = new Date().toISOString().slice(0, 10);
       const cycle = buildFirstCycle(lifts, trainingMaxes, startDate);
       const workouts = generateWorkoutsForCycle(cycle, lifts, finalSettings);
+      // The wizard's optional bodyweight question becomes cycle 1's first
+      // history point too, rather than being a disconnected number that
+      // only ever lived in Settings.
+      const bodyweightEntries: BodyweightEntry[] =
+        finalSettings.bodyweight != null ? [buildBodyweightEntry(startDate, finalSettings.bodyweight)] : [];
 
       const result = await withPersistence(
-        () => db.saveOnboardingData(finalSettings, lifts, cycle, workouts),
+        () => db.saveOnboardingData(finalSettings, lifts, cycle, workouts, bodyweightEntries),
         'setting up your first cycle'
       );
       if (!result.ok) return;
 
-      setData({ settings: finalSettings, lifts, cycles: [cycle], workouts });
+      setData({ settings: finalSettings, lifts, cycles: [cycle], workouts, bodyweightEntries });
       sync.notifyLocalChange();
     },
     [withPersistence, setData, sync]
@@ -195,6 +214,87 @@ export function useAppData(): UseAppDataReturn {
     [withPersistence, setData, sync]
   );
 
+  const updateLiftTrainingMax = useCallback(
+    async (liftId: string, newTrainingMax: number) => {
+      const current = dataRef.current;
+      const active = current.cycles.find((c) => c.status === 'active');
+      if (!active) return;
+
+      const updatedCycle: Cycle = {
+        ...active,
+        trainingMaxes: { ...active.trainingMaxes, [liftId]: newTrainingMax },
+      };
+
+      const updatedWorkouts = current.workouts.map((w) =>
+        w.cycleId === active.id && w.liftId === liftId && w.status === 'pending'
+          ? regenerateWorkoutForNewTrainingMax(w, newTrainingMax, current.settings.roundingIncrement)
+          : w
+      );
+
+      const result = await withPersistence(
+        () =>
+          db.saveTrainingMaxCorrection(
+            updatedCycle,
+            updatedWorkouts.filter((w, i) => w !== current.workouts[i])
+          ),
+        'saving the corrected Training Max'
+      );
+      if (!result.ok) return;
+
+      setData({
+        ...current,
+        cycles: current.cycles.map((c) => (c.id === updatedCycle.id ? updatedCycle : c)),
+        workouts: updatedWorkouts,
+      });
+      sync.notifyLocalChange();
+    },
+    [withPersistence, setData, sync]
+  );
+
+  const logBodyweight = useCallback(
+    async (date: string, weight: number) => {
+      const current = dataRef.current;
+      const entry = buildBodyweightEntry(date, weight);
+      const nextEntries = current.bodyweightEntries.some((e) => e.id === entry.id)
+        ? current.bodyweightEntries.map((e) => (e.id === entry.id ? entry : e))
+        : [...current.bodyweightEntries, entry];
+      // The entry just written isn't necessarily the newest one - correcting
+      // an old date shouldn't overwrite `settings.bodyweight` with a stale
+      // number if a more recent entry already exists.
+      const latest = latestBodyweight(nextEntries);
+      const nextSettings: Settings = latest ? { ...current.settings, bodyweight: latest.weight } : current.settings;
+
+      const result = await withPersistence(
+        () => db.saveBodyweightEntryWithSettings(entry, nextSettings),
+        'saving your bodyweight'
+      );
+      if (!result.ok) return;
+
+      setData({ ...current, bodyweightEntries: nextEntries, settings: nextSettings });
+      sync.notifyLocalChange();
+    },
+    [withPersistence, setData, sync]
+  );
+
+  const deleteBodyweightEntryFn = useCallback(
+    async (id: string) => {
+      const current = dataRef.current;
+      const nextEntries = current.bodyweightEntries.filter((e) => e.id !== id);
+      const latest = latestBodyweight(nextEntries);
+      const nextSettings: Settings = { ...current.settings, bodyweight: latest?.weight ?? null };
+
+      const result = await withPersistence(
+        () => db.deleteBodyweightEntryWithSettings(id, nextSettings),
+        'deleting that entry'
+      );
+      if (!result.ok) return;
+
+      setData({ ...current, bodyweightEntries: nextEntries, settings: nextSettings });
+      sync.notifyLocalChange();
+    },
+    [withPersistence, setData, sync]
+  );
+
   const activeCycle = data.cycles.find((c) => c.status === 'active') ?? null;
 
   return {
@@ -211,7 +311,11 @@ export function useAppData(): UseAppDataReturn {
     updateLifts,
     saveWorkout: saveWorkoutFn,
     startNextCycle,
+    updateLiftTrainingMax,
     reloadAll,
+    bodyweightEntries: data.bodyweightEntries,
+    logBodyweight,
+    deleteBodyweightEntry: deleteBodyweightEntryFn,
     syncConfig: sync.syncConfig,
     syncStatus: sync.syncStatus,
     syncState: sync.syncState,

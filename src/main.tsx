@@ -1,16 +1,18 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { CrashTestProbe } from './components/CrashTestProbe';
 import './index.css';
-import { registerServiceWorker } from './lib/pwa';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('Root element #root not found');
 
 createRoot(rootEl).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <CrashTestProbe />
+      <App />
+    </ErrorBoundary>
   </StrictMode>
 );
-
-registerServiceWorker();

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SyncConfig, SyncState, SyncStatus } from '../types';
 import { testConnection } from '../lib/github-sync';
+import { encodeConnectionCode, decodeConnectionCode, ConnectionCodeError } from '../lib/connectionCode';
 
 interface GitHubSyncSettingsProps {
   syncConfig: SyncConfig;
@@ -34,8 +35,37 @@ export function GitHubSyncSettings({
   const [token, setToken] = useState(syncConfig.token);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const configured = syncConfig.enabled;
+
+  function applyCode() {
+    try {
+      const decoded = decodeConnectionCode(codeInput);
+      setOwner(decoded.owner);
+      setRepo(decoded.repo);
+      setPath(decoded.path);
+      setToken(decoded.token);
+      setCodeError(null);
+      setCodeInput('');
+    } catch (err) {
+      setCodeError(err instanceof ConnectionCodeError ? err.message : 'Could not read that code.');
+    }
+  }
+
+  async function handleCopyCode() {
+    const code = encodeConnectionCode(syncConfig);
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API can fail (permissions, non-secure context) - the textarea is still selectable by hand.
+    }
+  }
 
   async function handleConnect() {
     setTesting(true);
@@ -68,6 +98,7 @@ export function GitHubSyncSettings({
     setPath('wendler-data.json');
     setToken('');
     setTestResult(null);
+    setShowCode(false);
   }
 
   const statusLabel: Record<SyncStatus, string> = {
@@ -88,6 +119,32 @@ export function GitHubSyncSettings({
             workout you save. Use a fine-grained token scoped to just that one repo with Contents read/write only —
             create one at github.com/settings/tokens?type=beta.
           </p>
+          <div className="field">
+            <label htmlFor="sync-code-input">Already set up on another device? Paste its connection code</label>
+            <input
+              id="sync-code-input"
+              type="text"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              placeholder="Paste code here"
+              data-testid="sync-code-input"
+            />
+            <button
+              className="btn"
+              style={{ marginTop: 8 }}
+              onClick={applyCode}
+              disabled={!codeInput.trim()}
+              data-testid="sync-code-apply-btn"
+            >
+              Fill in from code
+            </button>
+            {codeError && (
+              <p style={{ color: 'var(--plate-red)', fontSize: 12 }} data-testid="sync-code-error">
+                {codeError}
+              </p>
+            )}
+          </div>
+          <hr className="divider" />
           <div className="field">
             <label htmlFor="sync-owner">Repo owner (your GitHub username)</label>
             <input id="sync-owner" type="text" value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="yourname" data-testid="sync-owner-input" />
@@ -148,6 +205,46 @@ export function GitHubSyncSettings({
               Disable
             </button>
           </div>
+          <button
+            className="btn btn-block"
+            style={{ marginTop: 12 }}
+            onClick={() => setShowCode((s) => !s)}
+            data-testid="sync-show-code-btn"
+          >
+            {showCode ? 'Hide connection code' : 'Show connection code for another device'}
+          </button>
+          {showCode && (
+            <div className="field" style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 12, color: 'var(--plate-red)' }}>
+                This contains your access token in plain (encoded, not encrypted) form — treat it exactly like a
+                password. Only send it somewhere you'd trust with the token itself.
+              </p>
+              <textarea
+                readOnly
+                value={encodeConnectionCode(syncConfig)}
+                rows={4}
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                data-testid="sync-code-output"
+                style={{
+                  width: '100%',
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  padding: 8,
+                  background: 'var(--surface-raised)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  color: 'var(--text)',
+                  resize: 'vertical',
+                }}
+              />
+              <button className="btn" style={{ marginTop: 8 }} onClick={handleCopyCode} data-testid="sync-code-copy-btn">
+                {copied ? 'Copied ✓' : 'Copy to clipboard'}
+              </button>
+              <p style={{ fontSize: 12 }}>
+                On your other device, open Settings → Multi-device sync and paste this into "Paste its connection code."
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
