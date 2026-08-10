@@ -20,8 +20,21 @@ export interface Settings {
   units: Unit;
   barWeight: number;
   roundingIncrement: number;
+  /** Derived from the most recent BodyweightEntry - kept here too so anything
+   * that just wants "the current number" doesn't need to scan the whole
+   * history. The history in `bodyweightEntries` is the source of truth;
+   * this is a cache of its latest value, kept in sync wherever an entry is
+   * logged or deleted (see useAppData's logBodyweight/deleteBodyweightEntry). */
   bodyweight: number | null;
   onboardingComplete: boolean;
+  /** Purely cosmetic, defaults to 'serious' for anyone who onboarded before this existed. */
+  theme: 'serious' | 'arcade';
+  /** Suggested rest duration (seconds) for warm-up/BBS/accessory sets - shorter, higher-volume work. Editable in Settings. */
+  restTimerShortSeconds: number;
+  /** Suggested rest duration (seconds) for main/AMRAP work - the heaviest, most fatiguing sets. Editable in Settings. */
+  restTimerLongSeconds: number;
+  /** Best score on the rest-timer mini-game, kept here since Settings already syncs across devices - no need for a dedicated store for one number. */
+  restGameHighScore: number;
 }
 
 export interface Cycle {
@@ -83,13 +96,34 @@ export interface Workout {
   notes: string;
 }
 
+/**
+ * One weigh-in. `id` is deliberately the same string as `date` (yyyy-mm-dd) -
+ * logging again on a date you've already logged just overwrites that entry
+ * (an IndexedDB `put` against the same key), rather than needing separate
+ * "does today already have an entry?" lookup-then-update logic. One entry
+ * per calendar day; if you want to correct a past day, log that date again.
+ */
+export interface BodyweightEntry {
+  id: string;
+  date: string; // ISO date string (yyyy-mm-dd), same value as `id`
+  weight: number;
+}
+
 export interface AppData {
   settings: Settings;
   lifts: LiftConfig[];
   cycles: Cycle[];
   workouts: Workout[];
+  bodyweightEntries: BodyweightEntry[];
 }
 
+// Not bumped for `bodyweightEntries` (AppData) or the rest-timer fields
+// (Settings) below - same reasoning as `theme` before it: a new field with a
+// sensible default when absent on an older record, not a change to the shape
+// of a field that already existed. Bump this only when something that used
+// to exist changes shape or meaning, since a bump makes older backups
+// permanently unrestorable (see backup.ts) - additive fields shouldn't cost
+// that.
 export const SCHEMA_VERSION = 3;
 
 export interface BackupFile {

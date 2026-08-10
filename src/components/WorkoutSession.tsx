@@ -2,9 +2,12 @@ import { useState } from 'react';
 import type { LiftConfig, LoggedAccessoryExercise, LoggedSet, Settings, Workout } from '../types';
 import { estimateOneRepMax } from '../lib/wendler';
 import { findLastAccessorySelection } from '../lib/accessories';
+import { defaultRestSeconds, type WorkoutSection } from '../lib/rest';
 import { PlateBar } from './PlateBar';
 import { AccessoryWork } from './AccessoryWork';
+import { RestTimer } from './RestTimer';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { useBackable } from '../hooks/useBackable';
 
 interface WorkoutSessionProps {
   workout: Workout;
@@ -18,7 +21,16 @@ interface WorkoutSessionProps {
   allWorkouts: Workout[];
   onSave: (workout: Workout) => void;
   onClose: () => void;
+  /** Only used to persist a new rest-timer-game high score - the timer itself never touches anything else in Settings. */
+  onUpdateSettings: (settings: Settings) => Promise<void>;
 }
+
+const SECTION_LABELS: Record<WorkoutSection, string> = {
+  warmup: 'Warm-up',
+  main: 'Main work',
+  bbs: 'Boring But Strong',
+  accessory: 'Accessory',
+};
 
 export function WorkoutSession({
   workout,
@@ -29,8 +41,14 @@ export function WorkoutSession({
   allWorkouts,
   onSave,
   onClose,
+  onUpdateSettings,
 }: WorkoutSessionProps) {
   useWakeLock(true);
+
+  // Registers this session as a back-able layer (see hooks/useBackable.ts):
+  // opening it pushes a browser history entry, so swiping/pressing back
+  // closes it via handleBack below instead of exiting the installed PWA.
+  const { goBack, closeSilently } = useBackable(handleBack);
 
   const [warmupChecked, setWarmupChecked] = useState<boolean[]>(workout.warmupSets.map((s) => s.completed));
   const [mainSets, setMainSets] = useState<LoggedSet[]>(workout.mainSets);
@@ -41,6 +59,7 @@ export function WorkoutSession({
   const [notes, setNotes] = useState(workout.notes);
   const [dirty, setDirty] = useState(false);
   const [accessories, setAccessories] = useState<LoggedAccessoryExercise[]>(workout.accessories ?? []);
+  const [activeRestSection, setActiveRestSection] = useState<WorkoutSection | null>(null);
 
   // If this session hasn't had accessories picked yet, default to whatever
   // was picked last time this same lift was trained (any prior cycle) rather
@@ -123,24 +142,61 @@ export function WorkoutSession({
 
   function handleSave() {
     onSave(buildUpdatedWorkout(allMainComplete && bbsDone ? 'completed' : 'pending'));
-    onClose();
+    // Save is a deliberate way of closing this screen, not a back gesture -
+    // closeSilently consumes the history entry this session opened with
+    // without re-running handleBack's unsaved-changes check below.
+    closeSilently(onClose);
   }
 
   function handleSkip() {
     onSave(buildUpdatedWorkout('skipped'));
-    onClose();
+    closeSilently(onClose);
   }
 
-  function handleBack() {
+  // This doubles as the registered back-gesture handler (via useBackable
+  // above) and, through goBack, the target of the in-app Back button - both
+  // routes land here so a swipe gets the same unsaved-changes protection a
+  // tap does. Returning `true` tells useBackable to re-arm rather than close,
+  // so declining the prompt on a swipe still leaves the *next* swipe able to
+  // prompt again instead of silently exiting the app.
+  function handleBack(): boolean | void {
     if (dirty && !window.confirm('Discard your changes to this session? Nothing will be saved.')) {
-      return;
+      return true;
     }
     onClose();
   }
 
+  function startRest(section: WorkoutSection) {
+    setActiveRestSection(section);
+  }
+
+  async function handleNewHighScore(score: number) {
+    await onUpdateSettings({ ...settings, restGameHighScore: score });
+  }
+
+  // Rendered in place of the session below, not as a navigation - all the
+  // logging state above stays intact so closing the timer comes right back
+  // to exactly where you left off.
+  if (activeRestSection) {
+    return (
+      <RestTimer
+        defaultSeconds={defaultRestSeconds(activeRestSection, settings)}
+        sectionLabel={SECTION_LABELS[activeRestSection]}
+        highScore={settings.restGameHighScore}
+        onNewHighScore={handleNewHighScore}
+        onClose={() => setActiveRestSection(null)}
+      />
+    );
+  }
+
   return (
-    <div className="screen">
-      <button className="btn btn-ghost" onClick={handleBack} style={{ paddingLeft: 0 }}>
+    <div className="screen screen-decorated">
+      <button
+        className="btn btn-ghost"
+        onClick={goBack}
+        style={{ paddingLeft: 0 }}
+        data-testid="workout-back-btn"
+      >
         ← Back
       </button>
       <p className="eyebrow">Week {workout.week}</p>
@@ -183,6 +239,14 @@ export function WorkoutSession({
           </div>
         ))}
       </div>
+      <button
+        type="button"
+        className="btn btn-ghost rest-trigger"
+        onClick={() => startRest('warmup')}
+        data-testid="rest-trigger-warmup"
+      >
+        ⏱ Start rest ({defaultRestSeconds('warmup', settings)}s)
+      </button>
 
       <h3 style={{ marginTop: 20 }}>Main work</h3>
       <div className="card">
@@ -199,7 +263,7 @@ export function WorkoutSession({
               ✓
             </button>
             <div>
-              <div className="mono-num" style={{ fontSize: 16 }}>
+              <div className="mono-num" style={{ fontSize: 16 }} data-testid={`main-target-weight-${i}`}>
                 {set.targetWeight}
                 {settings.units} × {set.targetReps}
                 {set.isAmrap ? '+' : ''}
@@ -251,6 +315,14 @@ export function WorkoutSession({
         </p>
       )}
       <PlateBar weight={mainSets[mainSets.length - 1].targetWeight} barWeight={settings.barWeight} unit={settings.units} />
+      <button
+        type="button"
+        className="btn btn-ghost rest-trigger"
+        onClick={() => startRest('main')}
+        data-testid="rest-trigger-main"
+      >
+        ⏱ Start rest ({defaultRestSeconds('main', settings)}s)
+      </button>
 
       <h3 style={{ marginTop: 20 }}>Boring But Strong — {bbsTotalSets} × 5 @ {bbsWeight}{settings.units}</h3>
       <div className="card">
@@ -301,6 +373,14 @@ export function WorkoutSession({
         </div>
       </div>
       <PlateBar weight={bbsWeight} barWeight={settings.barWeight} unit={settings.units} />
+      <button
+        type="button"
+        className="btn btn-ghost rest-trigger"
+        onClick={() => startRest('bbs')}
+        data-testid="rest-trigger-bbs"
+      >
+        ⏱ Start rest ({defaultRestSeconds('bbs', settings)}s)
+      </button>
 
       <h3 style={{ marginTop: 20 }}>Accessory work</h3>
       <AccessoryWork
@@ -310,6 +390,14 @@ export function WorkoutSession({
         initialAccessories={initialAccessories}
         onChange={handleAccessoriesChange}
       />
+      <button
+        type="button"
+        className="btn btn-ghost rest-trigger"
+        onClick={() => startRest('accessory')}
+        data-testid="rest-trigger-accessory"
+      >
+        ⏱ Start rest ({defaultRestSeconds('accessory', settings)}s)
+      </button>
 
       <div className="field" style={{ marginTop: 16 }}>
         <label htmlFor="workout-notes">Notes (optional)</label>

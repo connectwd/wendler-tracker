@@ -1,17 +1,30 @@
 import { useMemo, useState } from 'react';
-import type { Cycle, LiftConfig, Settings, Workout } from '../types';
+import type { BodyweightEntry, Cycle, LiftConfig, Settings, Workout } from '../types';
 import { LineChart } from './LineChart';
 import { ConsistencyHeatmap } from './ConsistencyHeatmap';
+import { BodyweightLog } from './BodyweightLog';
 import { aggregateDailyStats, calculateLifetimeStats, detectPersonalRecords, formatTonnage } from '../lib/stats';
+import { bodyweightTrendPoints, hasAnyRatioData, strengthToBodyweightRatioPoints } from '../lib/bodyweight';
 
 interface ProgressChartsProps {
   lifts: LiftConfig[];
   cycles: Cycle[];
   workouts: Workout[];
   settings: Settings;
+  bodyweightEntries: BodyweightEntry[];
+  onLogBodyweight: (date: string, weight: number) => Promise<void>;
+  onDeleteBodyweightEntry: (id: string) => Promise<void>;
 }
 
-export function ProgressCharts({ lifts, cycles, workouts, settings }: ProgressChartsProps) {
+export function ProgressCharts({
+  lifts,
+  cycles,
+  workouts,
+  settings,
+  bodyweightEntries,
+  onLogBodyweight,
+  onDeleteBodyweightEntry,
+}: ProgressChartsProps) {
   const [selectedLiftId, setSelectedLiftId] = useState(lifts[0]?.id ?? '');
   const selectedLift = lifts.find((l) => l.id === selectedLiftId);
 
@@ -37,6 +50,16 @@ export function ProgressCharts({ lifts, cycles, workouts, settings }: ProgressCh
       .sort((a, b) => a.cycleNumber - b.cycleNumber)
       .map((c) => ({ x: c.cycleNumber, y: Math.round(c.trainingMaxes[selectedLift.id] * 10) / 10 }));
   }, [cycles, selectedLift]);
+
+  const bodyweightPoints = useMemo(() => bodyweightTrendPoints(bodyweightEntries), [bodyweightEntries]);
+  const ratioPoints = useMemo(
+    () => (selectedLift ? strengthToBodyweightRatioPoints(workouts, bodyweightEntries, selectedLift.id) : []),
+    [workouts, bodyweightEntries, selectedLift]
+  );
+  const showRatioSection = useMemo(
+    () => hasAnyRatioData(workouts, bodyweightEntries, lifts),
+    [workouts, bodyweightEntries, lifts]
+  );
 
   if (lifts.length === 0) {
     return (
@@ -76,6 +99,20 @@ export function ProgressCharts({ lifts, cycles, workouts, settings }: ProgressCh
         <h3>Consistency</h3>
         <ConsistencyHeatmap dailyStats={dailyStats} units={settings.units} />
       </div>
+
+      <BodyweightLog
+        entries={bodyweightEntries}
+        units={settings.units}
+        onLog={onLogBodyweight}
+        onDelete={onDeleteBodyweightEntry}
+      />
+
+      {bodyweightEntries.length > 0 && (
+        <div className="card">
+          <h3>Body weight over time</h3>
+          <LineChart points={bodyweightPoints} unit={settings.units} color="var(--plate-yellow)" />
+        </div>
+      )}
 
       {records.length > 0 && (
         <div className="card">
@@ -119,6 +156,18 @@ export function ProgressCharts({ lifts, cycles, workouts, settings }: ProgressCh
         <h3>Training Max by cycle</h3>
         <LineChart points={tmPoints} unit={settings.units} color="var(--plate-blue)" />
       </div>
+
+      {showRatioSection && (
+        <div className="card">
+          <h3>Strength ÷ bodyweight</h3>
+          <p style={{ fontSize: 13 }}>
+            Estimated 1RM divided by your bodyweight as of that session - a rising line means you're getting
+            stronger faster than you're gaining weight, same idea as the ratio your old spreadsheet tracked per
+            cycle, just filled in automatically per session.
+          </p>
+          <LineChart points={ratioPoints} color="var(--plate-green)" />
+        </div>
+      )}
     </div>
   );
 }

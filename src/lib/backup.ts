@@ -43,15 +43,15 @@ export async function exportBackup(): Promise<void> {
 
 export class BackupValidationError extends Error {}
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
+export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function isValidLift(v: unknown): boolean {
+export function isValidLift(v: unknown): boolean {
   return isPlainObject(v) && typeof v.id === 'string' && typeof v.name === 'string' && typeof v.cycleIncrement === 'number';
 }
 
-function isValidCycle(v: unknown): boolean {
+export function isValidCycle(v: unknown): boolean {
   return (
     isPlainObject(v) &&
     typeof v.id === 'string' &&
@@ -61,7 +61,7 @@ function isValidCycle(v: unknown): boolean {
   );
 }
 
-function isValidWorkout(v: unknown): boolean {
+export function isValidWorkout(v: unknown): boolean {
   return (
     isPlainObject(v) &&
     typeof v.id === 'string' &&
@@ -75,6 +75,10 @@ function isValidWorkout(v: unknown): boolean {
   );
 }
 
+export function isValidBodyweightEntry(v: unknown): boolean {
+  return isPlainObject(v) && typeof v.id === 'string' && typeof v.date === 'string' && typeof v.weight === 'number';
+}
+
 /**
  * Checks the shape of every record, not just that the top-level containers
  * are arrays - a backup that passed only the old shallow check could still
@@ -82,8 +86,21 @@ function isValidWorkout(v: unknown): boolean {
  * the dashboard tries to read its last set). Not exhaustive field-by-field
  * validation, but enough to catch anything that would otherwise blow up a
  * component render.
+ *
+ * Exported (along with the per-record checks above) so a bug in the
+ * rejection logic itself - the thing standing between a corrupted file and
+ * `replaceAllData` wiping good data with it - can be unit tested directly,
+ * without needing a real IndexedDB.
  */
-function isValidAppData(data: unknown): data is AppData {
+/**
+ * `bodyweightEntries` is checked as *optional* rather than required - a
+ * backup exported before this feature existed won't have the field at all,
+ * and that's a perfectly valid, restorable backup (see the SCHEMA_VERSION
+ * comment in types.ts: this was an additive field, not a shape change, so
+ * it deliberately didn't bump the version older backups are checked
+ * against). `importBackupFromFile` below fills in `[]` for the missing case.
+ */
+export function isValidAppData(data: unknown): data is AppData {
   if (!isPlainObject(data)) return false;
   return (
     isPlainObject(data.settings) &&
@@ -92,11 +109,23 @@ function isValidAppData(data: unknown): data is AppData {
     Array.isArray(data.cycles) &&
     data.cycles.every(isValidCycle) &&
     Array.isArray(data.workouts) &&
-    data.workouts.every(isValidWorkout)
+    data.workouts.every(isValidWorkout) &&
+    (data.bodyweightEntries === undefined ||
+      (Array.isArray(data.bodyweightEntries) && data.bodyweightEntries.every(isValidBodyweightEntry)))
   );
 }
 
-export async function importBackupFromFile(file: File): Promise<void> {
+/**
+ * `persist` defaults to the real `replaceAllData` (real IndexedDB) but can be
+ * overridden - same dependency-injection approach as `registerServiceWorker`
+ * in pwa.ts - so tests can verify a well-formed backup reaches persistence
+ * with the right shape without needing a real IndexedDB, and so the
+ * rejection paths above can be tested in complete isolation from it.
+ */
+export async function importBackupFromFile(
+  file: File,
+  persist: (data: AppData) => Promise<void> = replaceAllData
+): Promise<void> {
   const text = await file.text();
   let parsed: unknown;
   try {
@@ -121,7 +150,8 @@ export async function importBackupFromFile(file: File): Promise<void> {
       "This file's contents don't match what a wendler-tracker backup should look like - it may be corrupted."
     );
   }
-  await replaceAllData(backup.data);
+  // Older backups validated by isValidAppData above may not have this field at all.
+  await persist({ ...backup.data, bodyweightEntries: backup.data.bodyweightEntries ?? [] });
   // Deliberately not marked as a fresh backup: restoring FROM a file doesn't
   // mean there's now an up-to-date copy of your CURRENT data anywhere else -
   // the "back up soon" nag should only reset when you actually export.

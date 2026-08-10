@@ -1,12 +1,15 @@
 import type { Unit } from '../types';
 import { calculatePlates, type PlateColor } from '../lib/plates';
 
+// Deliberately uses the fixed --plate-color-* tokens, not the general
+// --plate-red/etc. accent tokens - this diagram represents real physical
+// plates on a real bar, so it must stay accurate regardless of theme.
 const COLOR_MAP: Record<PlateColor, string> = {
-  red: 'var(--plate-red)',
-  blue: 'var(--plate-blue)',
-  yellow: 'var(--plate-yellow)',
-  green: 'var(--plate-green)',
-  white: 'var(--plate-white)',
+  red: 'var(--plate-color-red)',
+  blue: 'var(--plate-color-blue)',
+  yellow: 'var(--plate-color-yellow)',
+  green: 'var(--plate-color-green)',
+  white: 'var(--plate-color-white)',
   black: '#3a3c44',
 };
 
