@@ -3,6 +3,7 @@ import type { Cycle, LiftConfig, Settings, Workout } from '../types';
 import { nextCycleTrainingMax } from '../lib/wendler';
 import { checkPlateau, resetTrainingMax } from '../lib/plateau';
 import { parsePositiveWeight } from '../lib/validation';
+import { useBackable } from '../hooks/useBackable';
 
 interface NewCycleReviewProps {
   activeCycle: Cycle;
@@ -23,6 +24,11 @@ export function NewCycleReview({
   onConfirm,
   onCancel,
 }: NewCycleReviewProps) {
+  // Registers this screen as a back-able layer (see hooks/useBackable.ts) -
+  // opening it pushes a browser history entry, so swiping/pressing back
+  // cancels the review instead of exiting the installed PWA.
+  const { goBack, closeSilently } = useBackable(onCancel);
+
   const [overrides, setOverrides] = useState<Record<string, string>>({});
 
   const cycleWorkouts = useMemo(
@@ -78,12 +84,15 @@ export function NewCycleReview({
     for (const lift of lifts) {
       finalOverrides[lift.id] = finalTM(lift);
     }
-    onConfirm(finalOverrides);
+    // Confirming is a deliberate way of closing this screen, not a back
+    // gesture - closeSilently consumes the history entry this screen opened
+    // with without re-running onCancel.
+    closeSilently(() => onConfirm(finalOverrides));
   }
 
   return (
     <div className="screen">
-      <button className="btn btn-ghost" onClick={onCancel} style={{ paddingLeft: 0 }}>
+      <button className="btn btn-ghost" onClick={goBack} style={{ paddingLeft: 0 }} data-testid="new-cycle-back-btn">
         ← Back
       </button>
       <p className="eyebrow">Cycle {activeCycle.cycleNumber} → {activeCycle.cycleNumber + 1}</p>

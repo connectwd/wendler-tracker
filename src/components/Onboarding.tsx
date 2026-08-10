@@ -3,6 +3,7 @@ import type { LiftConfig, Settings, Unit } from '../types';
 import { calculateTrainingMax, estimateOneRepMax } from '../lib/wendler';
 import { makeId } from '../lib/id';
 import { parsePositiveWeight } from '../lib/validation';
+import { DEFAULT_SETTINGS } from '../lib/db';
 
 const DEFAULT_LIFTS: Omit<LiftConfig, 'id'>[] = [
   { name: 'Bench Press', dayOfWeek: 1, order: 1, cycleIncrement: 3 },
@@ -86,6 +87,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   async function handleFinish() {
     setSaving(true);
     const settings: Settings = {
+      ...DEFAULT_SETTINGS,
       units,
       barWeight,
       roundingIncrement,

@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pullRemote, pushRemote, testConnection, SyncConflictError, SyncAuthError, SyncRateLimitError } from './github-sync';
+import { DEFAULT_SETTINGS } from './db';
 import type { AppData, SyncConfig } from '../types';
 
 const config: SyncConfig = { enabled: true, owner: 'jake', repo: 'wendler-data', path: 'wendler-data.json', token: 'fake-token' };
 
 const sampleData: AppData = {
-  settings: { units: 'kg', barWeight: 20, roundingIncrement: 2.5, bodyweight: 90, onboardingComplete: true },
+  settings: { ...DEFAULT_SETTINGS, bodyweight: 90, onboardingComplete: true },
   lifts: [{ id: 'bench', name: 'Bench Press', dayOfWeek: 1, order: 1, cycleIncrement: 3 }],
   cycles: [
     { id: 'c1', cycleNumber: 1, startDate: '2026-07-14', trainingMaxes: { bench: 166.5 }, status: 'active', completedDate: null },
