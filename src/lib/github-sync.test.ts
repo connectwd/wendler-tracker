@@ -12,6 +12,7 @@ const sampleData: AppData = {
     { id: 'c1', cycleNumber: 1, startDate: '2026-07-14', trainingMaxes: { bench: 166.5 }, status: 'active', completedDate: null },
   ],
   workouts: [],
+  bodyweightEntries: [],
 };
 
 function b64(str: string): string {

@@ -69,6 +69,15 @@ export default tseslint.config(
     },
   },
 
+  // Test files commonly use `any` in fixtures and helpers, so allow it here
+  // without relaxing the rule for app source.
+  {
+    files: ['tests/**/*.ts', 'src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
   // Must stay last - turns off ESLint's own stylistic rules that would
   // otherwise fight Prettier's formatting. Prettier itself runs separately
   // (`npm run format`), not as an ESLint rule - keeps linting fast and the

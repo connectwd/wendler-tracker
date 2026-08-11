@@ -36,9 +36,11 @@ function stampServiceWorkerBuildId(): Plugin {
 // IMPORTANT: set `base` to your GitHub repo name (with leading and trailing slashes)
 // e.g. if your repo is github.com/yourname/wendler-tracker, base should be '/wendler-tracker/'.
 // If you're deploying to a custom domain or a user/org page (yourname.github.io), set base to '/'.
+const base = process.env.NODE_ENV === 'production' ? '/wendler-tracker/' : '/';
+
 export default defineConfig({
   plugins: [react(), stampServiceWorkerBuildId()],
-  base: '/wendler-tracker/',
+  base,
   build: {
     outDir: 'dist',
   },
