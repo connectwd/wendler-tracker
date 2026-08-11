@@ -245,7 +245,7 @@ async function getSingleton<T extends object>(
   const rows = await getAll<T & { id: string }>(storeName);
   const row = rows.find((r) => r.id === key);
   if (!row) return { ...fallback };
-  const { id: _id, ...rest } = row;
+  const { ...rest } = row;
   // Merge over the default rather than trusting the stored record alone - an
   // existing row predates whatever field was added most recently (e.g.
   // `theme`, added well after `onboardingComplete`), so it won't have it.

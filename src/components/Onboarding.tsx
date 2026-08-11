@@ -111,7 +111,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       onboardingComplete: true,
     };
     const finalLifts: LiftConfig[] = lifts.map(
-      ({ inputWeight, inputReps, tmOverride, ...l }) => l,
+      ({ ...l }) => l,
     );
     const trainingMaxes: Record<string, number> = {};
     for (const l of lifts) {
@@ -134,8 +134,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             rounding before anything else.
           </p>
           <div className="field">
-            <label>Units</label>
-            <div className="row">
+            <label htmlFor="onb-units">Units</label>
+            <div id="onb-units" className="row">
               <button
                 className="btn"
                 style={{

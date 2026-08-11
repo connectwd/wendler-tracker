@@ -66,7 +66,7 @@ export function useBackable(onBack: () => void | boolean): Backable {
       handlerRef.current = null;
     };
     // Intentionally mount/unmount only - onBackRef always has the latest onBack.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   return {
