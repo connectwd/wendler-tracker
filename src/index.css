@@ -1,48 +1,48 @@
 @font-face {
-  font-family: 'Oswald';
-  src: url('./assets/fonts/oswald-500.woff2') format('woff2');
+  font-family: "Oswald";
+  src: url("./assets/fonts/oswald-500.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Oswald';
-  src: url('./assets/fonts/oswald-600.woff2') format('woff2');
+  font-family: "Oswald";
+  src: url("./assets/fonts/oswald-600.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Oswald';
-  src: url('./assets/fonts/oswald-700.woff2') format('woff2');
+  font-family: "Oswald";
+  src: url("./assets/fonts/oswald-700.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('./assets/fonts/inter-400.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("./assets/fonts/inter-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('./assets/fonts/inter-500.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("./assets/fonts/inter-500.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('./assets/fonts/inter-600.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("./assets/fonts/inter-600.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('./assets/fonts/inter-700.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("./assets/fonts/inter-700.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -52,29 +52,29 @@
    but loaded unconditionally like the above, same reasoning as Oswald/Inter:
    self-hosted so the theme toggle never depends on network access. */
 @font-face {
-  font-family: 'Bungee';
-  src: url('./assets/fonts/bungee-400.woff2') format('woff2');
+  font-family: "Bungee";
+  src: url("./assets/fonts/bungee-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Press Start 2P';
-  src: url('./assets/fonts/press-start-2p-400.woff2') format('woff2');
+  font-family: "Press Start 2P";
+  src: url("./assets/fonts/press-start-2p-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('./assets/fonts/space-grotesk-400.woff2') format('woff2');
+  font-family: "Space Grotesk";
+  src: url("./assets/fonts/space-grotesk-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('./assets/fonts/space-grotesk-700.woff2') format('woff2');
+  font-family: "Space Grotesk";
+  src: url("./assets/fonts/space-grotesk-700.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -92,11 +92,11 @@
   /* General UI accent system - named after and originally equal to the
      competition-plate colors below, but these ones are meant to re-theme
      (see [data-theme='arcade']). Everything except PlateBar.tsx uses these. */
-  --plate-red: #c8342e;      /* 25kg-red-colored - primary accent / primary actions */
+  --plate-red: #c8342e; /* 25kg-red-colored - primary accent / primary actions */
   --plate-red-dim: #7a221e;
-  --plate-blue: #2c6e9e;     /* 20kg-blue-colored - info / secondary data */
-  --plate-yellow: #d1a72c;   /* 15kg-yellow-colored - warnings / attention */
-  --plate-green: #4c8c4a;    /* 10kg-green-colored - success / completed */
+  --plate-blue: #2c6e9e; /* 20kg-blue-colored - info / secondary data */
+  --plate-yellow: #d1a72c; /* 15kg-yellow-colored - warnings / attention */
+  --plate-green: #4c8c4a; /* 10kg-green-colored - success / completed */
 
   /* Literal competition-plate colors (kg standard) - deliberately NOT
      overridden per theme. PlateBar.tsx uses these, and only these, so the
@@ -110,8 +110,8 @@
 
   --radius: 10px;
   --radius-sm: 6px;
-  --font-display: 'Oswald', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-display: "Oswald", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
   --card-shadow: none;
   --btn-shadow: none;
   --panel-clip: none;
@@ -124,49 +124,57 @@
    tokens above, which this block does not touch). Contrast-checked against
    WCAG AA (4.5:1) for every text/background pairing actually used below;
    see arcade-mode-concept-v2.html's own audit for the numbers. */
-[data-theme='arcade'] {
-  --bg: #4EC0FF;
-  --surface: #FFF8E7;
-  --surface-raised: #FFEFC7;
-  --border: #1B1533;
-  --text: #221C35;
+[data-theme="arcade"] {
+  --bg: #4ec0ff;
+  --surface: #fff8e7;
+  --surface-raised: #ffefc7;
+  --border: #1b1533;
+  --text: #221c35;
   --text-muted: #6b6280;
-  --text-faint: #6B5F8A;
+  --text-faint: #6b5f8a;
 
-  --plate-red: #C6281A;
-  --plate-red-dim: #811A11;
-  --plate-blue: #1746B3;
-  --plate-yellow: #FFC72C;
-  --plate-green: #3CB043;
+  --plate-red: #c6281a;
+  --plate-red-dim: #811a11;
+  --plate-blue: #1746b3;
+  --plate-yellow: #ffc72c;
+  --plate-green: #3cb043;
 
   --radius: 4px;
   --radius-sm: 3px;
-  --font-display: 'Bungee', sans-serif;
-  --font-body: 'Space Grotesk', sans-serif;
+  --font-display: "Bungee", sans-serif;
+  --font-body: "Space Grotesk", sans-serif;
   --card-shadow: 6px 6px 0 0 var(--border);
   --btn-shadow: 0 4px 0 0 var(--plate-red-dim);
   --panel-clip: polygon(
-    0 8px, 8px 8px, 8px 0,
-    calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
-    100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
-    8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+    0 8px,
+    8px 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    calc(100% - 8px) 8px,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    8px calc(100% - 8px),
+    0 calc(100% - 8px)
   );
 }
 
-[data-theme='arcade'] .card {
+[data-theme="arcade"] .card {
   border-width: 3px;
 }
 
-[data-theme='arcade'] .btn {
+[data-theme="arcade"] .btn {
   border-width: 2px;
 }
-[data-theme='arcade'] .btn:active {
+[data-theme="arcade"] .btn:active {
   transform: translateY(4px);
   box-shadow: 0 0 0 0 var(--plate-red-dim);
 }
 
-[data-theme='arcade'] .eyebrow {
-  font-family: 'Press Start 2P', monospace;
+[data-theme="arcade"] .eyebrow {
+  font-family: "Press Start 2P", monospace;
   font-size: 9px;
   letter-spacing: 0.02em;
 }
@@ -186,7 +194,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  font-feature-settings: 'tnum' 1, 'cv05' 1;
+  font-feature-settings:
+    "tnum" 1,
+    "cv05" 1;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
@@ -223,29 +233,45 @@ button {
 /* Dashboard and the active logging screen opt into this via .screen-decorated
    - deliberately not every screen (Settings, Progress, etc. stay plain).
    Pure CSS pseudo-elements, no extra markup needed in either component. */
-[data-theme='arcade'] .screen-decorated {
+[data-theme="arcade"] .screen-decorated {
   position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100%;
 }
-[data-theme='arcade'] .screen-decorated::before {
-  content: '';
+[data-theme="arcade"] .screen-decorated::before {
+  content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(28px 16px at 20% 8%, rgba(255,255,255,0.85), transparent 70%),
-    radial-gradient(20px 12px at 32% 5%, rgba(255,255,255,0.85), transparent 70%),
-    radial-gradient(24px 14px at 75% 14%, rgba(255,255,255,0.7), transparent 70%),
-    radial-gradient(18px 10px at 88% 11%, rgba(255,255,255,0.7), transparent 70%);
+    radial-gradient(
+      28px 16px at 20% 8%,
+      rgba(255, 255, 255, 0.85),
+      transparent 70%
+    ),
+    radial-gradient(
+      20px 12px at 32% 5%,
+      rgba(255, 255, 255, 0.85),
+      transparent 70%
+    ),
+    radial-gradient(
+      24px 14px at 75% 14%,
+      rgba(255, 255, 255, 0.7),
+      transparent 70%
+    ),
+    radial-gradient(
+      18px 10px at 88% 11%,
+      rgba(255, 255, 255, 0.7),
+      transparent 70%
+    );
   background-repeat: repeat-x;
   background-size: 300px 100%;
   animation: arcade-cloud-drift 22s linear infinite;
 }
-[data-theme='arcade'] .screen-decorated::after {
-  content: '';
+[data-theme="arcade"] .screen-decorated::after {
+  content: "";
   display: block;
   width: calc(100% + 36px);
   margin-left: -18px;
@@ -254,20 +280,31 @@ button {
   flex-shrink: 0;
   z-index: 2;
   pointer-events: none;
-  background-image: conic-gradient(var(--plate-red) 90deg, var(--surface) 90deg 180deg, var(--plate-red) 180deg 270deg, var(--surface) 270deg);
+  background-image: conic-gradient(
+    var(--plate-red) 90deg,
+    var(--surface) 90deg 180deg,
+    var(--plate-red) 180deg 270deg,
+    var(--surface) 270deg
+  );
   background-size: 16px 16px;
   border-top: 3px solid var(--border);
 }
 @keyframes arcade-cloud-drift {
-  from { background-position: 0 0; }
-  to { background-position: -300px 0; }
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -300px 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-theme='arcade'] .screen-decorated::before { animation: none; }
+  [data-theme="arcade"] .screen-decorated::before {
+    animation: none;
+  }
 }
 
 /* Everything on the screen needs to sit above the cloud layer. */
-[data-theme='arcade'] .screen-decorated > * {
+[data-theme="arcade"] .screen-decorated > * {
   position: relative;
   z-index: 1;
 }
@@ -331,7 +368,9 @@ p {
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 10px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .card-tap:active {
@@ -381,7 +420,9 @@ p {
   padding: 14px 18px;
   min-height: 48px;
   box-shadow: var(--btn-shadow);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
 }
 
 .btn:active {
@@ -474,9 +515,9 @@ p {
   transform: translateX(20px);
 }
 
-input[type='number'],
-input[type='text'],
-input[type='date'] {
+input[type="number"],
+input[type="text"],
+input[type="date"] {
   background: var(--surface-raised);
   border: 1px solid var(--border);
   color: var(--text);
@@ -694,15 +735,23 @@ label {
   background: var(--surface-raised);
 }
 
-.heatmap-cell[data-bucket='1'] { background: rgba(200, 52, 46, 0.3); }
-.heatmap-cell[data-bucket='2'] { background: rgba(200, 52, 46, 0.5); }
-.heatmap-cell[data-bucket='3'] { background: rgba(200, 52, 46, 0.75); }
-.heatmap-cell[data-bucket='4'] { background: var(--plate-red); }
-.heatmap-cell[data-skip='true'] {
+.heatmap-cell[data-bucket="1"] {
+  background: rgba(200, 52, 46, 0.3);
+}
+.heatmap-cell[data-bucket="2"] {
+  background: rgba(200, 52, 46, 0.5);
+}
+.heatmap-cell[data-bucket="3"] {
+  background: rgba(200, 52, 46, 0.75);
+}
+.heatmap-cell[data-bucket="4"] {
+  background: var(--plate-red);
+}
+.heatmap-cell[data-skip="true"] {
   background: transparent;
   border: 1px solid var(--text-faint);
 }
-.heatmap-cell[data-future='true'] {
+.heatmap-cell[data-future="true"] {
   background: transparent;
 }
 
@@ -868,4 +917,3 @@ label {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
-

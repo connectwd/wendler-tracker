@@ -1,5 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { pushBackHandler, removeBackHandler, replaceBackHandler, type BackHandler } from '../lib/backNav';
+import { useEffect, useRef } from "react";
+import {
+  pushBackHandler,
+  removeBackHandler,
+  replaceBackHandler,
+  type BackHandler,
+} from "../lib/backNav";
 
 export interface Backable {
   /**
@@ -52,7 +57,7 @@ export function useBackable(onBack: () => void | boolean): Backable {
         if (cancelled) rearm();
       };
       handlerRef.current = handler;
-      window.history.pushState({}, '');
+      window.history.pushState({}, "");
       pushBackHandler(handler);
     }
     rearm();
@@ -61,7 +66,7 @@ export function useBackable(onBack: () => void | boolean): Backable {
       handlerRef.current = null;
     };
     // Intentionally mount/unmount only - onBackRef always has the latest onBack.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   return {

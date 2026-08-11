@@ -16,15 +16,18 @@ let registration: ServiceWorkerRegistration | null = null;
  * had this app's service worker before - there's nothing to update *from* in that case, so
  * nothing is shown.
  */
-export function registerServiceWorker(onUpdateAvailable: () => void, isDev: boolean = import.meta.env.DEV): void {
-  if (!('serviceWorker' in navigator)) return;
+export function registerServiceWorker(
+  onUpdateAvailable: () => void,
+  isDev: boolean = import.meta.env.DEV,
+): void {
+  if (!("serviceWorker" in navigator)) return;
   // Never register in dev - Vite serves unhashed module URLs there, and the service
   // worker's cache-first strategy would cache them permanently by that exact URL, silently
   // defeating both HMR and hard reloads. Production builds use hashed, immutable filenames,
   // which is what makes cache-first safe there in the first place.
   if (isDev) return;
 
-  window.addEventListener('load', async () => {
+  window.addEventListener("load", async () => {
     const swUrl = `${import.meta.env.BASE_URL}sw.js`;
 
     // Captured before registration resolves: a page that's already controlled by a
@@ -35,19 +38,21 @@ export function registerServiceWorker(onUpdateAvailable: () => void, isDev: bool
     try {
       // updateViaCache: 'none' stops the browser from serving a stale, HTTP-cached copy
       // of sw.js itself when checking for updates - every check is a genuine network hit.
-      registration = await navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' });
+      registration = await navigator.serviceWorker.register(swUrl, {
+        updateViaCache: "none",
+      });
     } catch {
       // Offline support is a nice-to-have, not load-bearing - don't block the app on failure.
       return;
     }
 
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (hadControllerAtStart) onUpdateAvailable();
     });
 
     setInterval(() => registration?.update(), POLL_INTERVAL_MS);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') registration?.update();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") registration?.update();
     });
   });
 }

@@ -1,5 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { DEFAULT_GAME_CONFIG, initGameState, playerX, stepGame, type GameState } from '../lib/restGame';
+import { useEffect, useRef, useState } from "react";
+import {
+  DEFAULT_GAME_CONFIG,
+  initGameState,
+  playerX,
+  stepGame,
+  type GameState,
+} from "../lib/restGame";
 
 interface RestGameProps {
   highScore: number;
@@ -8,8 +14,10 @@ interface RestGameProps {
 
 /** Reads a CSS custom property from the document so the canvas re-skins itself for Serious vs Arcade mode without any game-specific theme code. */
 function themeColor(name: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback;
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
   return value || fallback;
 }
 
@@ -24,7 +32,7 @@ export function RestGame({ highScore, onNewHighScore }: RestGameProps) {
   const [display, setDisplay] = useState<GameState>(stateRef.current);
 
   function flap() {
-    if (stateRef.current.status === 'crashed') {
+    if (stateRef.current.status === "crashed") {
       stateRef.current = initGameState(config);
       setDisplay(stateRef.current);
       return;
@@ -34,13 +42,13 @@ export function RestGame({ highScore, onNewHighScore }: RestGameProps) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code === 'Space' || e.key === ' ') {
+      if (e.code === "Space" || e.key === " ") {
         e.preventDefault();
         flap();
       }
     }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -50,11 +58,19 @@ export function RestGame({ highScore, onNewHighScore }: RestGameProps) {
       const dtSeconds = (time - last) / 1000;
       lastTimeRef.current = time;
 
-      const wasPlaying = stateRef.current.status === 'playing';
+      const wasPlaying = stateRef.current.status === "playing";
       if (wasPlaying) {
-        stateRef.current = stepGame(stateRef.current, dtSeconds, pendingFlapRef.current, config);
+        stateRef.current = stepGame(
+          stateRef.current,
+          dtSeconds,
+          pendingFlapRef.current,
+          config,
+        );
         pendingFlapRef.current = false;
-        if (stateRef.current.status === 'crashed' && stateRef.current.score > bestRef.current) {
+        if (
+          stateRef.current.status === "crashed" &&
+          stateRef.current.score > bestRef.current
+        ) {
           bestRef.current = stateRef.current.score;
           onNewHighScore(stateRef.current.score);
         }
@@ -90,9 +106,11 @@ export function RestGame({ highScore, onNewHighScore }: RestGameProps) {
       />
       <div className="rest-game-hud">
         <span data-testid="rest-game-score">Score {display.score}</span>
-        <span data-testid="rest-game-best">Best {Math.max(display.score, bestRef.current)}</span>
+        <span data-testid="rest-game-best">
+          Best {Math.max(display.score, bestRef.current)}
+        </span>
       </div>
-      {display.status === 'crashed' && (
+      {display.status === "crashed" && (
         <div className="rest-game-crashed" data-testid="rest-game-crashed">
           Tap to try again
         </div>
@@ -101,15 +119,19 @@ export function RestGame({ highScore, onNewHighScore }: RestGameProps) {
   );
 }
 
-function draw(canvas: HTMLCanvasElement | null, state: GameState, config: typeof DEFAULT_GAME_CONFIG) {
+function draw(
+  canvas: HTMLCanvasElement | null,
+  state: GameState,
+  config: typeof DEFAULT_GAME_CONFIG,
+) {
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const bg = themeColor('--surface', '#1a1a1a');
-  const player = themeColor('--plate-red', '#e33');
-  const obstacle = themeColor('--plate-blue', '#36c');
-  const ground = themeColor('--border', '#444');
+  const bg = themeColor("--surface", "#1a1a1a");
+  const player = themeColor("--plate-red", "#e33");
+  const obstacle = themeColor("--plate-blue", "#36c");
+  const ground = themeColor("--border", "#444");
 
   ctx.clearRect(0, 0, config.width, config.height);
   ctx.fillStyle = bg;
@@ -120,7 +142,12 @@ function draw(canvas: HTMLCanvasElement | null, state: GameState, config: typeof
     const gapTop = o.gapY - config.gapHeight / 2;
     const gapBottom = o.gapY + config.gapHeight / 2;
     ctx.fillRect(o.x, 0, config.obstacleWidth, Math.max(gapTop, 0));
-    ctx.fillRect(o.x, gapBottom, config.obstacleWidth, Math.max(config.height - gapBottom, 0));
+    ctx.fillRect(
+      o.x,
+      gapBottom,
+      config.obstacleWidth,
+      Math.max(config.height - gapBottom, 0),
+    );
   }
 
   ctx.strokeStyle = ground;

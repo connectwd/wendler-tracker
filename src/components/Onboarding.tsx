@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import type { LiftConfig, Settings, Unit } from '../types';
-import { calculateTrainingMax, estimateOneRepMax } from '../lib/wendler';
-import { makeId } from '../lib/id';
-import { parsePositiveWeight } from '../lib/validation';
-import { DEFAULT_SETTINGS } from '../lib/db';
+import { useState } from "react";
+import type { LiftConfig, Settings, Unit } from "../types";
+import { calculateTrainingMax, estimateOneRepMax } from "../lib/wendler";
+import { makeId } from "../lib/id";
+import { parsePositiveWeight } from "../lib/validation";
+import { DEFAULT_SETTINGS } from "../lib/db";
 
-const DEFAULT_LIFTS: Omit<LiftConfig, 'id'>[] = [
-  { name: 'Bench Press', dayOfWeek: 1, order: 1, cycleIncrement: 3 },
-  { name: 'Squat', dayOfWeek: 2, order: 2, cycleIncrement: 3 },
-  { name: 'Deadlift', dayOfWeek: 4, order: 3, cycleIncrement: 3 },
-  { name: 'Overhead Press', dayOfWeek: 5, order: 4, cycleIncrement: 3 },
+const DEFAULT_LIFTS: Omit<LiftConfig, "id">[] = [
+  { name: "Bench Press", dayOfWeek: 1, order: 1, cycleIncrement: 3 },
+  { name: "Squat", dayOfWeek: 2, order: 2, cycleIncrement: 3 },
+  { name: "Deadlift", dayOfWeek: 4, order: 3, cycleIncrement: 3 },
+  { name: "Overhead Press", dayOfWeek: 5, order: 4, cycleIncrement: 3 },
 ];
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface LiftDraft extends LiftConfig {
   inputWeight: string;
@@ -21,19 +21,29 @@ interface LiftDraft extends LiftConfig {
 }
 
 interface OnboardingProps {
-  onComplete: (settings: Settings, lifts: LiftConfig[], trainingMaxes: Record<string, number>) => Promise<void>;
+  onComplete: (
+    settings: Settings,
+    lifts: LiftConfig[],
+    trainingMaxes: Record<string, number>,
+  ) => Promise<void>;
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
-  const [units, setUnits] = useState<Unit>('kg');
+  const [units, setUnits] = useState<Unit>("kg");
   const [barWeight, setBarWeight] = useState(20);
   const [roundingIncrement, setRoundingIncrement] = useState(2.5);
-  const [bodyweight, setBodyweight] = useState('');
+  const [bodyweight, setBodyweight] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [lifts, setLifts] = useState<LiftDraft[]>(
-    DEFAULT_LIFTS.map((l) => ({ ...l, id: makeId(), inputWeight: '', inputReps: '1', tmOverride: null }))
+    DEFAULT_LIFTS.map((l) => ({
+      ...l,
+      id: makeId(),
+      inputWeight: "",
+      inputReps: "1",
+      tmOverride: null,
+    })),
   );
 
   function updateLift(id: string, patch: Partial<LiftDraft>) {
@@ -45,12 +55,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       ...prev,
       {
         id: makeId(),
-        name: '',
+        name: "",
         dayOfWeek: 1,
         order: prev.length + 1,
         cycleIncrement: 3,
-        inputWeight: '',
-        inputReps: '1',
+        inputWeight: "",
+        inputReps: "1",
         tmOverride: null,
       },
     ]);
@@ -70,19 +80,25 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   }
 
   function finalTM(lift: LiftDraft): number | null {
-    if (lift.tmOverride !== null && lift.tmOverride.trim() !== '') {
+    if (lift.tmOverride !== null && lift.tmOverride.trim() !== "") {
       return parsePositiveWeight(lift.tmOverride);
     }
     return suggestedTM(lift);
   }
 
-  const steps = ['Units', 'Lifts', 'Current maxes', 'Review'];
+  const steps = ["Units", "Lifts", "Current maxes", "Review"];
 
-  const liftNames = lifts.map((l) => l.name.trim().toLowerCase()).filter(Boolean);
+  const liftNames = lifts
+    .map((l) => l.name.trim().toLowerCase())
+    .filter(Boolean);
   const hasDuplicateNames = new Set(liftNames).size !== liftNames.length;
   const canAdvanceFromLifts =
-    lifts.length > 0 && lifts.every((l) => l.name.trim().length > 0) && !hasDuplicateNames;
-  const canAdvanceFromMaxes = lifts.every((l) => finalTM(l) !== null && finalTM(l)! > 0);
+    lifts.length > 0 &&
+    lifts.every((l) => l.name.trim().length > 0) &&
+    !hasDuplicateNames;
+  const canAdvanceFromMaxes = lifts.every(
+    (l) => finalTM(l) !== null && finalTM(l)! > 0,
+  );
 
   async function handleFinish() {
     setSaving(true);
@@ -94,7 +110,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       bodyweight: bodyweight ? parseFloat(bodyweight) : null,
       onboardingComplete: true,
     };
-    const finalLifts: LiftConfig[] = lifts.map(({ inputWeight, inputReps, tmOverride, ...l }) => l);
+    const finalLifts: LiftConfig[] = lifts.map(
+      ({ ...l }) => l,
+    );
     const trainingMaxes: Record<string, number> = {};
     for (const l of lifts) {
       trainingMaxes[l.id] = finalTM(l)!;
@@ -111,21 +129,30 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
       {step === 0 && (
         <div className="stack">
-          <p>Standard Wendler starting procedure: nail down your units and rounding before anything else.</p>
+          <p>
+            Standard Wendler starting procedure: nail down your units and
+            rounding before anything else.
+          </p>
           <div className="field">
-            <label>Units</label>
-            <div className="row">
+            <label htmlFor="onb-units">Units</label>
+            <div id="onb-units" className="row">
               <button
                 className="btn"
-                style={{ flex: 1, background: units === 'kg' ? 'var(--plate-red)' : undefined }}
-                onClick={() => setUnits('kg')}
+                style={{
+                  flex: 1,
+                  background: units === "kg" ? "var(--plate-red)" : undefined,
+                }}
+                onClick={() => setUnits("kg")}
               >
                 kg
               </button>
               <button
                 className="btn"
-                style={{ flex: 1, background: units === 'lb' ? 'var(--plate-red)' : undefined }}
-                onClick={() => setUnits('lb')}
+                style={{
+                  flex: 1,
+                  background: units === "lb" ? "var(--plate-red)" : undefined,
+                }}
+                onClick={() => setUnits("lb")}
               >
                 lb
               </button>
@@ -141,13 +168,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             />
           </div>
           <div className="field">
-            <label htmlFor="onb-rounding">Round working weights to the nearest ({units})</label>
+            <label htmlFor="onb-rounding">
+              Round working weights to the nearest ({units})
+            </label>
             <input
               id="onb-rounding"
               type="number"
               step="0.25"
               value={roundingIncrement}
-              onChange={(e) => setRoundingIncrement(parseFloat(e.target.value) || 0)}
+              onChange={(e) =>
+                setRoundingIncrement(parseFloat(e.target.value) || 0)
+              }
             />
           </div>
         </div>
@@ -155,7 +186,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
       {step === 1 && (
         <div className="stack">
-          <p>Your four main lifts. Edit names, training day, or the amount each Training Max grows by every new cycle.</p>
+          <p>
+            Your four main lifts. Edit names, training day, or the amount each
+            Training Max grows by every new cycle.
+          </p>
           {lifts.map((lift) => (
             <div className="card" key={lift.id}>
               <div className="field">
@@ -164,7 +198,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   id={`lift-name-${lift.id}`}
                   type="text"
                   value={lift.name}
-                  onChange={(e) => updateLift(lift.id, { name: e.target.value })}
+                  onChange={(e) =>
+                    updateLift(lift.id, { name: e.target.value })
+                  }
                 />
               </div>
               <div className="row" style={{ gap: 10 }}>
@@ -173,12 +209,16 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   <select
                     id={`lift-day-${lift.id}`}
                     value={lift.dayOfWeek}
-                    onChange={(e) => updateLift(lift.id, { dayOfWeek: parseInt(e.target.value, 10) })}
+                    onChange={(e) =>
+                      updateLift(lift.id, {
+                        dayOfWeek: parseInt(e.target.value, 10),
+                      })
+                    }
                     style={{
-                      width: '100%',
-                      background: 'var(--surface-raised)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
+                      width: "100%",
+                      background: "var(--surface-raised)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
                       borderRadius: 6,
                       padding: 12,
                     }}
@@ -191,18 +231,27 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   </select>
                 </div>
                 <div className="field" style={{ flex: 1 }}>
-                  <label htmlFor={`lift-increment-${lift.id}`}>+ per cycle ({units})</label>
+                  <label htmlFor={`lift-increment-${lift.id}`}>
+                    + per cycle ({units})
+                  </label>
                   <input
                     id={`lift-increment-${lift.id}`}
                     type="number"
                     step="0.5"
                     value={lift.cycleIncrement}
-                    onChange={(e) => updateLift(lift.id, { cycleIncrement: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      updateLift(lift.id, {
+                        cycleIncrement: parseFloat(e.target.value) || 0,
+                      })
+                    }
                   />
                 </div>
               </div>
               {lifts.length > 1 && (
-                <button className="btn btn-ghost" onClick={() => removeLift(lift.id)}>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => removeLift(lift.id)}
+                >
                   Remove lift
                 </button>
               )}
@@ -212,7 +261,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             + Add another lift
           </button>
           {hasDuplicateNames && (
-            <p style={{ fontSize: 13, color: 'var(--plate-red)' }}>
+            <p style={{ fontSize: 13, color: "var(--plate-red)" }}>
               Two lifts have the same name — give each one something distinct.
             </p>
           )}
@@ -222,23 +271,33 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       {step === 2 && (
         <div className="stack">
           <p>
-            For each lift, enter a recent, honest set — weight and reps you could actually complete today. If you
-            know your true 1-rep max, enter it with 1 rep. Training Max defaults to 90% of that, and you can
-            override it if you'd rather start conservative.
+            For each lift, enter a recent, honest set — weight and reps you
+            could actually complete today. If you know your true 1-rep max,
+            enter it with 1 rep. Training Max defaults to 90% of that, and you
+            can override it if you'd rather start conservative.
           </p>
           {lifts.map((lift) => {
             const suggestion = suggestedTM(lift);
             return (
               <div className="card" key={lift.id}>
-                <h3 style={{ marginBottom: 10 }}>{lift.name || 'Unnamed lift'}</h3>
+                <h3 style={{ marginBottom: 10 }}>
+                  {lift.name || "Unnamed lift"}
+                </h3>
                 <div className="row" style={{ gap: 10 }}>
                   <div className="field" style={{ flex: 1 }}>
-                    <label htmlFor={`lift-weight-${lift.id}`}>Weight ({units})</label>
+                    <label htmlFor={`lift-weight-${lift.id}`}>
+                      Weight ({units})
+                    </label>
                     <input
                       id={`lift-weight-${lift.id}`}
                       type="number"
                       value={lift.inputWeight}
-                      onChange={(e) => updateLift(lift.id, { inputWeight: e.target.value, tmOverride: null })}
+                      onChange={(e) =>
+                        updateLift(lift.id, {
+                          inputWeight: e.target.value,
+                          tmOverride: null,
+                        })
+                      }
                     />
                   </div>
                   <div className="field" style={{ flex: 1 }}>
@@ -247,39 +306,71 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       id={`lift-reps-${lift.id}`}
                       type="number"
                       value={lift.inputReps}
-                      onChange={(e) => updateLift(lift.id, { inputReps: e.target.value, tmOverride: null })}
+                      onChange={(e) =>
+                        updateLift(lift.id, {
+                          inputReps: e.target.value,
+                          tmOverride: null,
+                        })
+                      }
                     />
                   </div>
                 </div>
                 {suggestion !== null && (
                   <p style={{ fontSize: 13 }}>
-                    Estimated 1RM: <span className="mono-num">{estimateOneRepMax(parseFloat(lift.inputWeight), parseInt(lift.inputReps, 10))?.toFixed(1)}{units}</span>
-                    {' · '}Suggested Training Max (90%): <span className="mono-num">{suggestion.toFixed(1)}{units}</span>
+                    Estimated 1RM:{" "}
+                    <span className="mono-num">
+                      {estimateOneRepMax(
+                        parseFloat(lift.inputWeight),
+                        parseInt(lift.inputReps, 10),
+                      )?.toFixed(1)}
+                      {units}
+                    </span>
+                    {" · "}Suggested Training Max (90%):{" "}
+                    <span className="mono-num">
+                      {suggestion.toFixed(1)}
+                      {units}
+                    </span>
                   </p>
                 )}
                 <div className="field" style={{ marginTop: 6 }}>
-                  <label htmlFor={`lift-tm-${lift.id}`}>Training Max to use ({units})</label>
+                  <label htmlFor={`lift-tm-${lift.id}`}>
+                    Training Max to use ({units})
+                  </label>
                   <input
                     id={`lift-tm-${lift.id}`}
                     type="number"
-                    placeholder={suggestion !== null ? suggestion.toFixed(1) : '—'}
-                    value={lift.tmOverride ?? ''}
-                    onChange={(e) => updateLift(lift.id, { tmOverride: e.target.value })}
+                    placeholder={
+                      suggestion !== null ? suggestion.toFixed(1) : "—"
+                    }
+                    value={lift.tmOverride ?? ""}
+                    onChange={(e) =>
+                      updateLift(lift.id, { tmOverride: e.target.value })
+                    }
                   />
                 </div>
               </div>
             );
           })}
           <div className="field">
-            <label htmlFor="onb-bodyweight">Bodyweight ({units}, optional)</label>
-            <input id="onb-bodyweight" type="number" value={bodyweight} onChange={(e) => setBodyweight(e.target.value)} />
+            <label htmlFor="onb-bodyweight">
+              Bodyweight ({units}, optional)
+            </label>
+            <input
+              id="onb-bodyweight"
+              type="number"
+              value={bodyweight}
+              onChange={(e) => setBodyweight(e.target.value)}
+            />
           </div>
         </div>
       )}
 
       {step === 3 && (
         <div className="stack">
-          <p>Cycle 1 will be created with these Training Maxes. New cycles carry each TM forward by its + per cycle amount automatically.</p>
+          <p>
+            Cycle 1 will be created with these Training Maxes. New cycles carry
+            each TM forward by its + per cycle amount automatically.
+          </p>
           {lifts.map((lift) => (
             <div className="card row" key={lift.id}>
               <span>{lift.name}</span>
@@ -315,7 +406,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
       <div className="row" style={{ marginTop: 20, gap: 10 }}>
         {step > 0 && (
-          <button className="btn" onClick={() => setStep((s) => s - 1)} disabled={saving}>
+          <button
+            className="btn"
+            onClick={() => setStep((s) => s - 1)}
+            disabled={saving}
+          >
             Back
           </button>
         )}
@@ -323,14 +418,21 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <button
             className="btn btn-primary btn-block"
             onClick={() => setStep((s) => s + 1)}
-            disabled={(step === 1 && !canAdvanceFromLifts) || (step === 2 && !canAdvanceFromMaxes)}
+            disabled={
+              (step === 1 && !canAdvanceFromLifts) ||
+              (step === 2 && !canAdvanceFromMaxes)
+            }
           >
             Continue
           </button>
         )}
         {step === steps.length - 1 && (
-          <button className="btn btn-primary btn-block" onClick={handleFinish} disabled={saving}>
-            {saving ? 'Setting up…' : 'Start Cycle 1'}
+          <button
+            className="btn btn-primary btn-block"
+            onClick={handleFinish}
+            disabled={saving}
+          >
+            {saving ? "Setting up…" : "Start Cycle 1"}
           </button>
         )}
       </div>

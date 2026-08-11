@@ -1,4 +1,8 @@
-import type { AccessoryCategory, LoggedAccessoryExercise, Workout } from '../types';
+import type {
+  AccessoryCategory,
+  LoggedAccessoryExercise,
+  Workout,
+} from "../types";
 
 export interface AccessoryExerciseOption {
   id: string;
@@ -15,42 +19,52 @@ export interface AccessoryExerciseOption {
  */
 export const ACCESSORY_CATALOG: AccessoryExerciseOption[] = [
   // Push
-  { id: 'dips', name: 'Dips', category: 'push' },
-  { id: 'pushups', name: 'Push-ups', category: 'push' },
-  { id: 'db-bench', name: 'DB Bench Press', category: 'push' },
-  { id: 'db-incline', name: 'DB Incline Press', category: 'push' },
-  { id: 'db-shoulder-press', name: 'DB Shoulder Press', category: 'push' },
-  { id: 'triceps-extension', name: 'Triceps Extension / Pushdown', category: 'push' },
+  { id: "dips", name: "Dips", category: "push" },
+  { id: "pushups", name: "Push-ups", category: "push" },
+  { id: "db-bench", name: "DB Bench Press", category: "push" },
+  { id: "db-incline", name: "DB Incline Press", category: "push" },
+  { id: "db-shoulder-press", name: "DB Shoulder Press", category: "push" },
+  {
+    id: "triceps-extension",
+    name: "Triceps Extension / Pushdown",
+    category: "push",
+  },
   // Pull
-  { id: 'chins-pullups', name: 'Chin-ups / Pull-ups', category: 'pull' },
-  { id: 'inverted-rows', name: 'Inverted Rows', category: 'pull' },
-  { id: 'db-bb-rows', name: 'DB / Barbell Rows', category: 'pull' },
-  { id: 'face-pulls', name: 'Face Pulls', category: 'pull' },
-  { id: 'band-pull-aparts', name: 'Band Pull-Aparts', category: 'pull' },
-  { id: 'lat-pulldown', name: 'Lat Pulldown', category: 'pull' },
-  { id: 'curls', name: 'Curls', category: 'pull' },
+  { id: "chins-pullups", name: "Chin-ups / Pull-ups", category: "pull" },
+  { id: "inverted-rows", name: "Inverted Rows", category: "pull" },
+  { id: "db-bb-rows", name: "DB / Barbell Rows", category: "pull" },
+  { id: "face-pulls", name: "Face Pulls", category: "pull" },
+  { id: "band-pull-aparts", name: "Band Pull-Aparts", category: "pull" },
+  { id: "lat-pulldown", name: "Lat Pulldown", category: "pull" },
+  { id: "curls", name: "Curls", category: "pull" },
   // Single leg / core
-  { id: 'ab-work', name: 'Ab Wheel / Abdominal Work', category: 'core' },
-  { id: 'back-raises', name: 'Back Raises', category: 'core' },
-  { id: 'reverse-hyper', name: 'Reverse Hyperextensions', category: 'core' },
-  { id: 'lunges', name: 'Lunges', category: 'core' },
-  { id: 'step-ups', name: 'Step-ups', category: 'core' },
-  { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', category: 'core' },
-  { id: 'kb-swings', name: 'KB Swings', category: 'core' },
+  { id: "ab-work", name: "Ab Wheel / Abdominal Work", category: "core" },
+  { id: "back-raises", name: "Back Raises", category: "core" },
+  { id: "reverse-hyper", name: "Reverse Hyperextensions", category: "core" },
+  { id: "lunges", name: "Lunges", category: "core" },
+  { id: "step-ups", name: "Step-ups", category: "core" },
+  {
+    id: "bulgarian-split-squat",
+    name: "Bulgarian Split Squat",
+    category: "core",
+  },
+  { id: "kb-swings", name: "KB Swings", category: "core" },
 ];
 
 export const ACCESSORY_CATEGORY_LABELS: Record<AccessoryCategory, string> = {
-  push: 'Push',
-  pull: 'Pull',
-  core: 'Single Leg / Core',
+  push: "Push",
+  pull: "Pull",
+  core: "Single Leg / Core",
 };
 
 /** Wendler's own number - flexible on how you get there (5x10, 3x15, 10x5, etc). */
-export const ACCESSORY_REP_TARGET = '50-100 total reps';
+export const ACCESSORY_REP_TARGET = "50-100 total reps";
 
 export const MAX_ACCESSORY_EXERCISES = 3;
 
-export function getAccessoryOption(exerciseId: string): AccessoryExerciseOption | undefined {
+export function getAccessoryOption(
+  exerciseId: string,
+): AccessoryExerciseOption | undefined {
   return ACCESSORY_CATALOG.find((o) => o.id === exerciseId);
 }
 
@@ -63,14 +77,16 @@ export function getAccessoryOption(exerciseId: string): AccessoryExerciseOption 
 export function findLastAccessoryLog(
   exerciseId: string,
   workouts: Workout[],
-  excludeWorkoutId?: string
+  excludeWorkoutId?: string,
 ): { date: string; exercise: LoggedAccessoryExercise } | null {
   let best: { date: string; exercise: LoggedAccessoryExercise } | null = null;
   for (const w of workouts) {
     if (w.id === excludeWorkoutId || !w.date) continue;
     for (const acc of w.accessories ?? []) {
       if (acc.exerciseId !== exerciseId) continue;
-      const hasLoggedSet = acc.sets.some((s) => s.weight !== null && s.reps !== null);
+      const hasLoggedSet = acc.sets.some(
+        (s) => s.weight !== null && s.reps !== null,
+      );
       if (!hasLoggedSet) continue;
       if (!best || w.date > best.date) best = { date: w.date, exercise: acc };
     }
@@ -87,10 +103,16 @@ export function findLastAccessoryLog(
 export function findLastAccessorySelection(
   liftId: string,
   workouts: Workout[],
-  excludeWorkoutId?: string
+  excludeWorkoutId?: string,
 ): LoggedAccessoryExercise[] | null {
   const candidates = workouts
-    .filter((w) => w.liftId === liftId && w.id !== excludeWorkoutId && w.date && (w.accessories?.length ?? 0) > 0)
+    .filter(
+      (w) =>
+        w.liftId === liftId &&
+        w.id !== excludeWorkoutId &&
+        w.date &&
+        (w.accessories?.length ?? 0) > 0,
+    )
     .sort((a, b) => (a.date! < b.date! ? 1 : -1));
   return candidates[0]?.accessories ?? null;
 }

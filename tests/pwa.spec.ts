@@ -1,21 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('PWA', () => {
-  test('the manifest is linked and reachable', async ({ page }) => {
-    await page.goto('./');
-    const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+test.describe("PWA", () => {
+  test("the manifest is linked and reachable", async ({ page }) => {
+    await page.goto("./");
+    const manifestHref = await page
+      .locator('link[rel="manifest"]')
+      .getAttribute("href");
     expect(manifestHref).toBeTruthy();
 
     const manifestUrl = new URL(manifestHref!, page.url()).toString();
     const response = await page.request.get(manifestUrl);
     expect(response.ok()).toBeTruthy();
     const manifest = await response.json();
-    expect(manifest.name).toBe('5/3/1 Tracker');
+    expect(manifest.name).toBe("5/3/1 Tracker");
     expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
   });
 
-  test('a service worker registers and becomes active', async ({ page }) => {
-    await page.goto('./');
+  test("a service worker registers and becomes active", async ({ page }) => {
+    await page.goto("./");
     const active = await page.evaluate(async () => {
       try {
         await navigator.serviceWorker.ready;
@@ -27,9 +29,12 @@ test.describe('PWA', () => {
     expect(active).toBe(true);
   });
 
-  test('the app shell still loads after going offline, once it has been visited once', async ({ page, context }) => {
+  test("the app shell still loads after going offline, once it has been visited once", async ({
+    page,
+    context,
+  }) => {
     // First load: registers + installs the service worker and caches the shell.
-    await page.goto('./');
+    await page.goto("./");
     await page.evaluate(() => navigator.serviceWorker.ready);
 
     // Reload once while still online so the (now-active) service worker is

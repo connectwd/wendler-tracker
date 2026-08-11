@@ -1,8 +1,12 @@
-import type { Cycle, LiftConfig, Workout } from '../types';
+import type { Cycle, LiftConfig, Workout } from "../types";
 
 /** Sum of weight x reps across every logged set (warm-up + main + BBS) in a session. */
 export function workoutTonnage(workout: Workout): number {
-  const allSets = [...workout.warmupSets, ...workout.mainSets, ...workout.bbsSets];
+  const allSets = [
+    ...workout.warmupSets,
+    ...workout.mainSets,
+    ...workout.bbsSets,
+  ];
   return allSets.reduce((sum, s) => {
     if (s.actualWeight != null && s.actualReps != null) {
       return sum + s.actualWeight * s.actualReps;
@@ -19,12 +23,19 @@ export interface DailyStat {
 }
 
 /** Groups every resolved (completed or skipped) workout by its logged date, for the heatmap. */
-export function aggregateDailyStats(workouts: Workout[]): Map<string, DailyStat> {
+export function aggregateDailyStats(
+  workouts: Workout[],
+): Map<string, DailyStat> {
   const map = new Map<string, DailyStat>();
   for (const w of workouts) {
-    if (!w.date || w.status === 'pending') continue;
-    const existing = map.get(w.date) ?? { date: w.date, tonnage: 0, hasSkip: false, hasCompleted: false };
-    if (w.status === 'completed') {
+    if (!w.date || w.status === "pending") continue;
+    const existing = map.get(w.date) ?? {
+      date: w.date,
+      tonnage: 0,
+      hasSkip: false,
+      hasCompleted: false,
+    };
+    if (w.status === "completed") {
       existing.tonnage += workoutTonnage(w);
       existing.hasCompleted = true;
     } else {
@@ -50,11 +61,20 @@ export interface PersonalRecord {
  * happened. A lift with a steadily rising e1RM produces one record per rise;
  * a lift that's plateaued produces just its one high-water mark.
  */
-export function detectPersonalRecords(workouts: Workout[], lifts: LiftConfig[], cycles: Cycle[]): PersonalRecord[] {
+export function detectPersonalRecords(
+  workouts: Workout[],
+  lifts: LiftConfig[],
+  cycles: Cycle[],
+): PersonalRecord[] {
   const records: PersonalRecord[] = [];
   for (const lift of lifts) {
     const liftWorkouts = workouts
-      .filter((w) => w.liftId === lift.id && w.estimatedOneRepMax !== null && w.date !== null)
+      .filter(
+        (w) =>
+          w.liftId === lift.id &&
+          w.estimatedOneRepMax !== null &&
+          w.date !== null,
+      )
       .slice()
       .sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : 0));
     let best = 0;
@@ -75,18 +95,27 @@ export function detectPersonalRecords(workouts: Workout[], lifts: LiftConfig[], 
     }
   }
   // Newest first for display purposes.
-  return records.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return records.sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+  );
 }
 
 /**
  * The best e1RM logged for a lift so far, excluding one workout (typically the
  * session currently being edited) - used to detect "is this a new PR right now".
  */
-export function bestE1RMExcluding(liftId: string, workouts: Workout[], excludeWorkoutId?: string): number | null {
+export function bestE1RMExcluding(
+  liftId: string,
+  workouts: Workout[],
+  excludeWorkoutId?: string,
+): number | null {
   let best: number | null = null;
   for (const w of workouts) {
     if (w.liftId !== liftId || w.id === excludeWorkoutId) continue;
-    if (w.estimatedOneRepMax !== null && (best === null || w.estimatedOneRepMax > best)) {
+    if (
+      w.estimatedOneRepMax !== null &&
+      (best === null || w.estimatedOneRepMax > best)
+    ) {
       best = w.estimatedOneRepMax;
     }
   }
@@ -101,20 +130,30 @@ export interface LifetimeStats {
   prCount: number;
 }
 
-export function calculateLifetimeStats(workouts: Workout[], cycles: Cycle[], records: PersonalRecord[]): LifetimeStats {
+export function calculateLifetimeStats(
+  workouts: Workout[],
+  cycles: Cycle[],
+  records: PersonalRecord[],
+): LifetimeStats {
   let totalTonnage = 0;
   let totalSessions = 0;
   let totalSkipped = 0;
   for (const w of workouts) {
-    if (w.status === 'completed') {
+    if (w.status === "completed") {
       totalTonnage += workoutTonnage(w);
       totalSessions += 1;
-    } else if (w.status === 'skipped') {
+    } else if (w.status === "skipped") {
       totalSkipped += 1;
     }
   }
-  const cyclesCompleted = cycles.filter((c) => c.status === 'completed').length;
-  return { totalTonnage, totalSessions, totalSkipped, cyclesCompleted, prCount: records.length };
+  const cyclesCompleted = cycles.filter((c) => c.status === "completed").length;
+  return {
+    totalTonnage,
+    totalSessions,
+    totalSkipped,
+    cyclesCompleted,
+    prCount: records.length,
+  };
 }
 
 // ---- Heatmap grid ----
@@ -139,7 +178,7 @@ function isoDate(d: Date): string {
 export function buildHeatmapWeeks(
   dailyStats: Map<string, DailyStat>,
   weeksBack: number,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): HeatmapCell[][] {
   const todayIso = isoDate(now);
   const today = new Date(`${todayIso}T00:00:00.000Z`);
@@ -168,7 +207,10 @@ export function buildHeatmapWeeks(
 }
 
 /** Buckets a day's tonnage relative to the busiest day in the visible window, for shading. 0 = nothing logged. */
-export function tonnageBucket(tonnage: number, maxTonnage: number): 0 | 1 | 2 | 3 | 4 {
+export function tonnageBucket(
+  tonnage: number,
+  maxTonnage: number,
+): 0 | 1 | 2 | 3 | 4 {
   if (tonnage <= 0) return 0;
   if (maxTonnage <= 0) return 1;
   const ratio = tonnage / maxTonnage;

@@ -1,8 +1,8 @@
-import { defineConfig, type Plugin, type ResolvedConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { defineConfig, type Plugin, type ResolvedConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // package.json has "type": "module", so __dirname isn't available here - resolve it
 // explicitly rather than relying on Vite's config-loader shim for it.
@@ -17,18 +17,24 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 // verbatim to dist/ *after* the build's closeBundle hooks run, which would silently clobber
 // a stamped file placed there under the same name.
 function stampServiceWorkerBuildId(): Plugin {
-  let outDir = 'dist';
+  let outDir = "dist";
   let projectRoot = rootDir;
   return {
-    name: 'stamp-sw-build-id',
+    name: "stamp-sw-build-id",
     configResolved(config: ResolvedConfig) {
       outDir = config.build.outDir;
       projectRoot = config.root;
     },
     closeBundle() {
       const buildId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      const template = readFileSync(resolve(rootDir, 'sw-template.js'), 'utf-8');
-      writeFileSync(resolve(projectRoot, outDir, 'sw.js'), template.replaceAll('__BUILD_ID__', buildId));
+      const template = readFileSync(
+        resolve(rootDir, "sw-template.js"),
+        "utf-8",
+      );
+      writeFileSync(
+        resolve(projectRoot, outDir, "sw.js"),
+        template.replaceAll("__BUILD_ID__", buildId),
+      );
     },
   };
 }
@@ -36,10 +42,12 @@ function stampServiceWorkerBuildId(): Plugin {
 // IMPORTANT: set `base` to your GitHub repo name (with leading and trailing slashes)
 // e.g. if your repo is github.com/yourname/wendler-tracker, base should be '/wendler-tracker/'.
 // If you're deploying to a custom domain or a user/org page (yourname.github.io), set base to '/'.
+const base = process.env.NODE_ENV === "production" ? "/wendler-tracker/" : "/";
+
 export default defineConfig({
   plugins: [react(), stampServiceWorkerBuildId()],
-  base: '/wendler-tracker/',
+  base,
   build: {
-    outDir: 'dist',
+    outDir: "dist",
   },
 });

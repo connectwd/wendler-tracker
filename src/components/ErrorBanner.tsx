@@ -1,4 +1,4 @@
-import type { AppError } from '../lib/errors';
+import type { AppError } from "../lib/errors";
 
 interface ErrorBannerProps {
   error: AppError;
@@ -9,7 +9,12 @@ export function ErrorBanner({ error, onDismiss }: ErrorBannerProps) {
   return (
     <div
       className="warning-banner"
-      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 10,
+      }}
       data-testid="error-banner"
     >
       <div>
@@ -17,7 +22,7 @@ export function ErrorBanner({ error, onDismiss }: ErrorBannerProps) {
       </div>
       <button
         className="btn btn-ghost"
-        style={{ padding: '2px 8px', minHeight: 'auto', flexShrink: 0 }}
+        style={{ padding: "2px 8px", minHeight: "auto", flexShrink: 0 }}
         onClick={onDismiss}
         aria-label="Dismiss"
         data-testid="error-banner-dismiss"

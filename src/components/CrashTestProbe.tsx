@@ -12,8 +12,13 @@
  * safe, reload" screen a real crash would, with no side effects.
  */
 export function CrashTestProbe() {
-  if (new URLSearchParams(window.location.search).get('__crashtest') === 'boundary') {
-    throw new Error('Deliberate test crash (?__crashtest=boundary) - verifies the ErrorBoundary fallback.');
+  if (
+    new URLSearchParams(window.location.search).get("__crashtest") ===
+    "boundary"
+  ) {
+    throw new Error(
+      "Deliberate test crash (?__crashtest=boundary) - verifies the ErrorBoundary fallback.",
+    );
   }
   return null;
 }

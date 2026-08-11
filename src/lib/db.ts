@@ -1,26 +1,43 @@
-import type { AppData, Settings, LiftConfig, Cycle, Workout, BodyweightEntry, SyncConfig, SyncState } from '../types';
-import { StorageError } from './errors';
+import type {
+  AppData,
+  Settings,
+  LiftConfig,
+  Cycle,
+  Workout,
+  BodyweightEntry,
+  SyncConfig,
+  SyncState,
+} from "../types";
+import { StorageError } from "./errors";
 
-const DB_NAME = 'wendler-tracker';
+const DB_NAME = "wendler-tracker";
 // v3: adds the 'bodyweightEntries' store. New-store creation (the loop in
 // openDB below) is idempotent and always runs regardless of oldVersion, so
 // this is a plain version bump with no entry in `migrations` - there's no
 // existing store whose *shape* changed, just a new one added.
 const DB_VERSION = 3;
-const STORES = ['settings', 'lifts', 'cycles', 'workouts', 'bodyweightEntries', 'syncConfig', 'syncState'] as const;
+const STORES = [
+  "settings",
+  "lifts",
+  "cycles",
+  "workouts",
+  "bodyweightEntries",
+  "syncConfig",
+  "syncState",
+] as const;
 type StoreName = (typeof STORES)[number];
 
-const SETTINGS_KEY = 'app-settings';
-const SYNC_CONFIG_KEY = 'sync-config';
-const SYNC_STATE_KEY = 'sync-state';
+const SETTINGS_KEY = "app-settings";
+const SYNC_CONFIG_KEY = "sync-config";
+const SYNC_STATE_KEY = "sync-state";
 
 export const DEFAULT_SETTINGS: Settings = {
-  units: 'kg',
+  units: "kg",
   barWeight: 20,
   roundingIncrement: 2.5,
   bodyweight: null,
   onboardingComplete: false,
-  theme: 'serious',
+  theme: "serious",
   restTimerShortSeconds: 90,
   restTimerLongSeconds: 180,
   restGameHighScore: 0,
@@ -28,10 +45,10 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   enabled: false,
-  owner: '',
-  repo: '',
-  path: 'wendler-data.json',
-  token: '',
+  owner: "",
+  repo: "",
+  path: "wendler-data.json",
+  token: "",
 };
 
 export const DEFAULT_SYNC_STATE: SyncState = {
@@ -86,7 +103,7 @@ const migrations: Record<number, (t: IDBTransaction) => void> = {};
 export function migrateStoreRecords(
   t: IDBTransaction,
   storeName: StoreName,
-  transform: (record: unknown) => unknown
+  transform: (record: unknown) => unknown,
 ): void {
   const store = t.objectStore(storeName);
   const req = store.openCursor();
@@ -106,7 +123,7 @@ function openDB(): Promise<IDBDatabase> {
       const db = req.result;
       for (const store of STORES) {
         if (!db.objectStoreNames.contains(store)) {
-          db.createObjectStore(store, { keyPath: 'id' });
+          db.createObjectStore(store, { keyPath: "id" });
         }
       }
       const t = req.transaction;
@@ -123,14 +140,14 @@ function openDB(): Promise<IDBDatabase> {
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () =>
-      reject(new StorageError('Could not open the local database.', req.error));
+      reject(new StorageError("Could not open the local database.", req.error));
     // Fires if another tab has the DB open on an older version and won't let
     // this one upgrade. Without this the promise would just hang forever.
     req.onblocked = () =>
       reject(
         new StorageError(
-          'The local database is open in another tab on an older version - close other tabs of this app and reload.'
-        )
+          "The local database is open in another tab on an older version - close other tabs of this app and reload.",
+        ),
       );
   });
   return dbPromise;
@@ -140,7 +157,7 @@ function openDB(): Promise<IDBDatabase> {
 function tx<T>(
   storeName: StoreName,
   mode: IDBTransactionMode,
-  fn: (store: IDBObjectStore) => IDBRequest<T>
+  fn: (store: IDBObjectStore) => IDBRequest<T>,
 ): Promise<T> {
   return openDB().then(
     (db) =>
@@ -150,8 +167,13 @@ function tx<T>(
         const req = fn(store);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () =>
-          reject(new StorageError(`A database request on "${storeName}" failed.`, req.error));
-      })
+          reject(
+            new StorageError(
+              `A database request on "${storeName}" failed.`,
+              req.error,
+            ),
+          );
+      }),
   );
 }
 
@@ -165,43 +187,65 @@ function tx<T>(
 function runTransaction(
   storeNames: StoreName[],
   mode: IDBTransactionMode,
-  work: (t: IDBTransaction) => void
+  work: (t: IDBTransaction) => void,
 ): Promise<void> {
   return openDB().then(
     (db) =>
       new Promise<void>((resolve, reject) => {
         const t = db.transaction(storeNames, mode);
         t.oncomplete = () => resolve();
-        t.onerror = () => reject(new StorageError('A database transaction failed.', t.error));
-        t.onabort = () => reject(new StorageError('A database transaction was aborted.', t.error));
+        t.onerror = () =>
+          reject(new StorageError("A database transaction failed.", t.error));
+        t.onabort = () =>
+          reject(
+            new StorageError("A database transaction was aborted.", t.error),
+          );
         try {
           work(t);
         } catch (err) {
-          reject(err instanceof StorageError ? err : new StorageError('Failed to queue database writes.', err));
+          reject(
+            err instanceof StorageError
+              ? err
+              : new StorageError("Failed to queue database writes.", err),
+          );
         }
-      })
+      }),
   );
 }
 
 function getAll<T>(storeName: StoreName): Promise<T[]> {
-  return tx<T[]>(storeName, 'readonly', (store) => store.getAll() as IDBRequest<T[]>);
+  return tx<T[]>(
+    storeName,
+    "readonly",
+    (store) => store.getAll() as IDBRequest<T[]>,
+  );
 }
 
 function put<T>(storeName: StoreName, value: T): Promise<IDBValidKey> {
-  return tx<IDBValidKey>(storeName, 'readwrite', (store) => store.put(value));
+  return tx<IDBValidKey>(storeName, "readwrite", (store) => store.put(value));
 }
 
-const DATA_STORES = ['settings', 'lifts', 'cycles', 'workouts', 'bodyweightEntries'] as const;
+const DATA_STORES = [
+  "settings",
+  "lifts",
+  "cycles",
+  "workouts",
+  "bodyweightEntries",
+] as const;
 
 // ---- Generic singleton-row helpers (settings / sync config / sync state
 // all follow "one row, fixed key" - this replaces three near-identical
 // get/strip-id/default implementations with one.) ----
 
-async function getSingleton<T extends object>(storeName: StoreName, key: string, fallback: T): Promise<T> {
+async function getSingleton<T extends object>(
+  storeName: StoreName,
+  key: string,
+  fallback: T,
+): Promise<T> {
   const rows = await getAll<T & { id: string }>(storeName);
   const row = rows.find((r) => r.id === key);
   if (!row) return { ...fallback };
-  const { id: _id, ...rest } = row;
+  const { ...rest } = row;
   // Merge over the default rather than trusting the stored record alone - an
   // existing row predates whatever field was added most recently (e.g.
   // `theme`, added well after `onboardingComplete`), so it won't have it.
@@ -210,24 +254,30 @@ async function getSingleton<T extends object>(storeName: StoreName, key: string,
   return { ...fallback, ...rest };
 }
 
-function saveSingleton<T extends object>(storeName: StoreName, key: string, value: T): Promise<IDBValidKey> {
+function saveSingleton<T extends object>(
+  storeName: StoreName,
+  key: string,
+  value: T,
+): Promise<IDBValidKey> {
   return put(storeName, { id: key, ...value });
 }
 
 // ---- Settings ----
 
 export function getSettings(): Promise<Settings> {
-  return getSingleton('settings', SETTINGS_KEY, DEFAULT_SETTINGS);
+  return getSingleton("settings", SETTINGS_KEY, DEFAULT_SETTINGS);
 }
 
 export function saveSettings(settings: Settings): Promise<IDBValidKey> {
-  return saveSingleton('settings', SETTINGS_KEY, settings);
+  return saveSingleton("settings", SETTINGS_KEY, settings);
 }
 
 // ---- Lifts ----
 
 export function getLifts(): Promise<LiftConfig[]> {
-  return getAll<LiftConfig>('lifts').then((lifts) => lifts.sort((a, b) => a.order - b.order));
+  return getAll<LiftConfig>("lifts").then((lifts) =>
+    lifts.sort((a, b) => a.order - b.order),
+  );
 }
 
 /**
@@ -238,8 +288,8 @@ export function getLifts(): Promise<LiftConfig[]> {
  * never cleaned up).
  */
 export function saveLifts(lifts: LiftConfig[]): Promise<void> {
-  return runTransaction(['lifts'], 'readwrite', (t) => {
-    const store = t.objectStore('lifts');
+  return runTransaction(["lifts"], "readwrite", (t) => {
+    const store = t.objectStore("lifts");
     store.clear();
     for (const lift of lifts) store.put(lift);
   });
@@ -248,28 +298,32 @@ export function saveLifts(lifts: LiftConfig[]): Promise<void> {
 // ---- Cycles ----
 
 export function getCycles(): Promise<Cycle[]> {
-  return getAll<Cycle>('cycles').then((cycles) => cycles.sort((a, b) => a.cycleNumber - b.cycleNumber));
+  return getAll<Cycle>("cycles").then((cycles) =>
+    cycles.sort((a, b) => a.cycleNumber - b.cycleNumber),
+  );
 }
 
 export function saveCycle(cycle: Cycle): Promise<IDBValidKey> {
-  return put('cycles', cycle);
+  return put("cycles", cycle);
 }
 
 // ---- Workouts ----
 
 export function getWorkouts(): Promise<Workout[]> {
-  return getAll<Workout>('workouts');
+  return getAll<Workout>("workouts");
 }
 
 export function saveWorkout(workout: Workout): Promise<IDBValidKey> {
-  return put('workouts', workout);
+  return put("workouts", workout);
 }
 
 // ---- Bodyweight entries ----
 
 export function getBodyweightEntries(): Promise<BodyweightEntry[]> {
-  return getAll<BodyweightEntry>('bodyweightEntries').then((entries) =>
-    entries.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  return getAll<BodyweightEntry>("bodyweightEntries").then((entries) =>
+    entries
+      .slice()
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)),
   );
 }
 
@@ -282,30 +336,37 @@ export function getBodyweightEntries(): Promise<BodyweightEntry[]> {
  * null). Atomic so the entry and the cache can't drift apart on a partial
  * failure.
  */
-export function saveBodyweightEntryWithSettings(entry: BodyweightEntry, settings: Settings): Promise<void> {
-  return runTransaction(['bodyweightEntries', 'settings'], 'readwrite', (t) => {
-    t.objectStore('bodyweightEntries').put(entry);
-    t.objectStore('settings').put({ id: SETTINGS_KEY, ...settings });
+export function saveBodyweightEntryWithSettings(
+  entry: BodyweightEntry,
+  settings: Settings,
+): Promise<void> {
+  return runTransaction(["bodyweightEntries", "settings"], "readwrite", (t) => {
+    t.objectStore("bodyweightEntries").put(entry);
+    t.objectStore("settings").put({ id: SETTINGS_KEY, ...settings });
   });
 }
 
-export function deleteBodyweightEntryWithSettings(id: string, settings: Settings): Promise<void> {
-  return runTransaction(['bodyweightEntries', 'settings'], 'readwrite', (t) => {
-    t.objectStore('bodyweightEntries').delete(id);
-    t.objectStore('settings').put({ id: SETTINGS_KEY, ...settings });
+export function deleteBodyweightEntryWithSettings(
+  id: string,
+  settings: Settings,
+): Promise<void> {
+  return runTransaction(["bodyweightEntries", "settings"], "readwrite", (t) => {
+    t.objectStore("bodyweightEntries").delete(id);
+    t.objectStore("settings").put({ id: SETTINGS_KEY, ...settings });
   });
 }
 
 // ---- Bulk/atomic operations ----
 
 export async function getAllData(): Promise<AppData> {
-  const [settings, lifts, cycles, workouts, bodyweightEntries] = await Promise.all([
-    getSettings(),
-    getLifts(),
-    getCycles(),
-    getWorkouts(),
-    getBodyweightEntries(),
-  ]);
+  const [settings, lifts, cycles, workouts, bodyweightEntries] =
+    await Promise.all([
+      getSettings(),
+      getLifts(),
+      getCycles(),
+      getWorkouts(),
+      getBodyweightEntries(),
+    ]);
   return { settings, lifts, cycles, workouts, bodyweightEntries };
 }
 
@@ -316,23 +377,32 @@ export function saveOnboardingData(
   lifts: LiftConfig[],
   cycle: Cycle,
   workouts: Workout[],
-  bodyweightEntries: BodyweightEntry[] = []
+  bodyweightEntries: BodyweightEntry[] = [],
 ): Promise<void> {
-  return runTransaction(['settings', 'lifts', 'cycles', 'workouts', 'bodyweightEntries'], 'readwrite', (t) => {
-    t.objectStore('settings').put({ id: SETTINGS_KEY, ...settings });
-    for (const lift of lifts) t.objectStore('lifts').put(lift);
-    t.objectStore('cycles').put(cycle);
-    for (const w of workouts) t.objectStore('workouts').put(w);
-    for (const e of bodyweightEntries) t.objectStore('bodyweightEntries').put(e);
-  });
+  return runTransaction(
+    ["settings", "lifts", "cycles", "workouts", "bodyweightEntries"],
+    "readwrite",
+    (t) => {
+      t.objectStore("settings").put({ id: SETTINGS_KEY, ...settings });
+      for (const lift of lifts) t.objectStore("lifts").put(lift);
+      t.objectStore("cycles").put(cycle);
+      for (const w of workouts) t.objectStore("workouts").put(w);
+      for (const e of bodyweightEntries)
+        t.objectStore("bodyweightEntries").put(e);
+    },
+  );
 }
 
 /** Completing one cycle and starting the next, as one atomic write. */
-export function saveCycleTransition(completedCycle: Cycle, nextCycle: Cycle, nextWorkouts: Workout[]): Promise<void> {
-  return runTransaction(['cycles', 'workouts'], 'readwrite', (t) => {
-    t.objectStore('cycles').put(completedCycle);
-    t.objectStore('cycles').put(nextCycle);
-    for (const w of nextWorkouts) t.objectStore('workouts').put(w);
+export function saveCycleTransition(
+  completedCycle: Cycle,
+  nextCycle: Cycle,
+  nextWorkouts: Workout[],
+): Promise<void> {
+  return runTransaction(["cycles", "workouts"], "readwrite", (t) => {
+    t.objectStore("cycles").put(completedCycle);
+    t.objectStore("cycles").put(nextCycle);
+    for (const w of nextWorkouts) t.objectStore("workouts").put(w);
   });
 }
 
@@ -341,10 +411,13 @@ export function saveCycleTransition(completedCycle: Cycle, nextCycle: Cycle, nex
  * plus whatever pending workouts got their target weights recalculated as a
  * result - as one atomic write, same reasoning as saveCycleTransition.
  */
-export function saveTrainingMaxCorrection(updatedCycle: Cycle, updatedWorkouts: Workout[]): Promise<void> {
-  return runTransaction(['cycles', 'workouts'], 'readwrite', (t) => {
-    t.objectStore('cycles').put(updatedCycle);
-    for (const w of updatedWorkouts) t.objectStore('workouts').put(w);
+export function saveTrainingMaxCorrection(
+  updatedCycle: Cycle,
+  updatedWorkouts: Workout[],
+): Promise<void> {
+  return runTransaction(["cycles", "workouts"], "readwrite", (t) => {
+    t.objectStore("cycles").put(updatedCycle);
+    for (const w of updatedWorkouts) t.objectStore("workouts").put(w);
   });
 }
 
@@ -362,16 +435,22 @@ export function saveTrainingMaxCorrection(updatedCycle: Cycle, updatedWorkouts: 
  * the `for` loop below on the very first sync after updating.
  */
 export function replaceAllData(data: AppData): Promise<void> {
-  return runTransaction(DATA_STORES as unknown as StoreName[], 'readwrite', (t) => {
-    for (const store of DATA_STORES) {
-      t.objectStore(store).clear();
-    }
-    t.objectStore('settings').put({ id: SETTINGS_KEY, ...data.settings });
-    for (const lift of data.lifts) t.objectStore('lifts').put(lift);
-    for (const cycle of data.cycles) t.objectStore('cycles').put(cycle);
-    for (const workout of data.workouts) t.objectStore('workouts').put(workout);
-    for (const entry of data.bodyweightEntries ?? []) t.objectStore('bodyweightEntries').put(entry);
-  });
+  return runTransaction(
+    DATA_STORES as unknown as StoreName[],
+    "readwrite",
+    (t) => {
+      for (const store of DATA_STORES) {
+        t.objectStore(store).clear();
+      }
+      t.objectStore("settings").put({ id: SETTINGS_KEY, ...data.settings });
+      for (const lift of data.lifts) t.objectStore("lifts").put(lift);
+      for (const cycle of data.cycles) t.objectStore("cycles").put(cycle);
+      for (const workout of data.workouts)
+        t.objectStore("workouts").put(workout);
+      for (const entry of data.bodyweightEntries ?? [])
+        t.objectStore("bodyweightEntries").put(entry);
+    },
+  );
 }
 
 /**
@@ -391,7 +470,10 @@ export async function requestPersistentStorage(): Promise<boolean> {
   return false;
 }
 
-export async function getStorageEstimate(): Promise<{ usage: number; quota: number } | null> {
+export async function getStorageEstimate(): Promise<{
+  usage: number;
+  quota: number;
+} | null> {
   if (navigator.storage?.estimate) {
     const { usage, quota } = await navigator.storage.estimate();
     return { usage: usage ?? 0, quota: quota ?? 0 };
@@ -402,17 +484,17 @@ export async function getStorageEstimate(): Promise<{ usage: number; quota: numb
 // ---- GitHub sync config & state - deliberately separate from AppData/backups ----
 
 export function getSyncConfig(): Promise<SyncConfig> {
-  return getSingleton('syncConfig', SYNC_CONFIG_KEY, DEFAULT_SYNC_CONFIG);
+  return getSingleton("syncConfig", SYNC_CONFIG_KEY, DEFAULT_SYNC_CONFIG);
 }
 
 export function saveSyncConfig(config: SyncConfig): Promise<IDBValidKey> {
-  return saveSingleton('syncConfig', SYNC_CONFIG_KEY, config);
+  return saveSingleton("syncConfig", SYNC_CONFIG_KEY, config);
 }
 
 export function getSyncState(): Promise<SyncState> {
-  return getSingleton('syncState', SYNC_STATE_KEY, DEFAULT_SYNC_STATE);
+  return getSingleton("syncState", SYNC_STATE_KEY, DEFAULT_SYNC_STATE);
 }
 
 export function saveSyncState(state: SyncState): Promise<IDBValidKey> {
-  return saveSingleton('syncState', SYNC_STATE_KEY, state);
+  return saveSingleton("syncState", SYNC_STATE_KEY, state);
 }

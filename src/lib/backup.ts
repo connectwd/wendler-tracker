@@ -1,8 +1,8 @@
-import type { AppData, BackupFile } from '../types';
-import { SCHEMA_VERSION } from '../types';
-import { getAllData, replaceAllData } from './db';
+import type { AppData, BackupFile } from "../types";
+import { SCHEMA_VERSION } from "../types";
+import { getAllData, replaceAllData } from "./db";
 
-const LAST_BACKUP_KEY = 'wendler-tracker-last-backup-at';
+const LAST_BACKUP_KEY = "wendler-tracker-last-backup-at";
 
 export function getLastBackupTimestamp(): string | null {
   return localStorage.getItem(LAST_BACKUP_KEY);
@@ -25,12 +25,14 @@ export async function exportBackup(): Promise<void> {
   const backup: BackupFile = {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    app: 'wendler-tracker',
+    app: "wendler-tracker",
     data,
   };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   const dateStamp = new Date().toISOString().slice(0, 10);
   a.href = url;
   a.download = `wendler-tracker-backup-${dateStamp}.json`;
@@ -44,39 +46,51 @@ export async function exportBackup(): Promise<void> {
 export class BackupValidationError extends Error {}
 
 export function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
+  return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
 export function isValidLift(v: unknown): boolean {
-  return isPlainObject(v) && typeof v.id === 'string' && typeof v.name === 'string' && typeof v.cycleIncrement === 'number';
+  return (
+    isPlainObject(v) &&
+    typeof v.id === "string" &&
+    typeof v.name === "string" &&
+    typeof v.cycleIncrement === "number"
+  );
 }
 
 export function isValidCycle(v: unknown): boolean {
   return (
     isPlainObject(v) &&
-    typeof v.id === 'string' &&
-    typeof v.cycleNumber === 'number' &&
+    typeof v.id === "string" &&
+    typeof v.cycleNumber === "number" &&
     isPlainObject(v.trainingMaxes) &&
-    (v.status === 'active' || v.status === 'completed')
+    (v.status === "active" || v.status === "completed")
   );
 }
 
 export function isValidWorkout(v: unknown): boolean {
   return (
     isPlainObject(v) &&
-    typeof v.id === 'string' &&
-    typeof v.liftId === 'string' &&
-    typeof v.cycleId === 'string' &&
+    typeof v.id === "string" &&
+    typeof v.liftId === "string" &&
+    typeof v.cycleId === "string" &&
     Array.isArray(v.warmupSets) &&
     Array.isArray(v.mainSets) &&
     Array.isArray(v.bbsSets) &&
     Array.isArray(v.accessories) &&
-    (v.status === 'pending' || v.status === 'completed' || v.status === 'skipped')
+    (v.status === "pending" ||
+      v.status === "completed" ||
+      v.status === "skipped")
   );
 }
 
 export function isValidBodyweightEntry(v: unknown): boolean {
-  return isPlainObject(v) && typeof v.id === 'string' && typeof v.date === 'string' && typeof v.weight === 'number';
+  return (
+    isPlainObject(v) &&
+    typeof v.id === "string" &&
+    typeof v.date === "string" &&
+    typeof v.weight === "number"
+  );
 }
 
 /**
@@ -111,7 +125,8 @@ export function isValidAppData(data: unknown): data is AppData {
     Array.isArray(data.workouts) &&
     data.workouts.every(isValidWorkout) &&
     (data.bodyweightEntries === undefined ||
-      (Array.isArray(data.bodyweightEntries) && data.bodyweightEntries.every(isValidBodyweightEntry)))
+      (Array.isArray(data.bodyweightEntries) &&
+        data.bodyweightEntries.every(isValidBodyweightEntry)))
   );
 }
 
@@ -124,34 +139,47 @@ export function isValidAppData(data: unknown): data is AppData {
  */
 export async function importBackupFromFile(
   file: File,
-  persist: (data: AppData) => Promise<void> = replaceAllData
+  persist: (data: AppData) => Promise<void> = replaceAllData,
 ): Promise<void> {
   const text = await file.text();
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new BackupValidationError('That file is not valid JSON.');
+    throw new BackupValidationError("That file is not valid JSON.");
   }
   const backup = parsed as Partial<BackupFile>;
-  if (backup.app !== 'wendler-tracker') {
-    throw new BackupValidationError("That doesn't look like a wendler-tracker backup file.");
-  }
-  if (typeof backup.schemaVersion === 'number' && backup.schemaVersion > SCHEMA_VERSION) {
-    throw new BackupValidationError('This backup was made by a newer version of the app than this one supports.');
-  }
-  if (typeof backup.schemaVersion === 'number' && backup.schemaVersion < SCHEMA_VERSION) {
+  if (backup.app !== "wendler-tracker") {
     throw new BackupValidationError(
-      `This backup is from an older version of the app (schema v${backup.schemaVersion}, this one expects v${SCHEMA_VERSION}) and can't be restored automatically - the data shape has changed since. Hold onto the file rather than discarding it.`
+      "That doesn't look like a wendler-tracker backup file.",
+    );
+  }
+  if (
+    typeof backup.schemaVersion === "number" &&
+    backup.schemaVersion > SCHEMA_VERSION
+  ) {
+    throw new BackupValidationError(
+      "This backup was made by a newer version of the app than this one supports.",
+    );
+  }
+  if (
+    typeof backup.schemaVersion === "number" &&
+    backup.schemaVersion < SCHEMA_VERSION
+  ) {
+    throw new BackupValidationError(
+      `This backup is from an older version of the app (schema v${backup.schemaVersion}, this one expects v${SCHEMA_VERSION}) and can't be restored automatically - the data shape has changed since. Hold onto the file rather than discarding it.`,
     );
   }
   if (!isValidAppData(backup.data)) {
     throw new BackupValidationError(
-      "This file's contents don't match what a wendler-tracker backup should look like - it may be corrupted."
+      "This file's contents don't match what a wendler-tracker backup should look like - it may be corrupted.",
     );
   }
   // Older backups validated by isValidAppData above may not have this field at all.
-  await persist({ ...backup.data, bodyweightEntries: backup.data.bodyweightEntries ?? [] });
+  await persist({
+    ...backup.data,
+    bodyweightEntries: backup.data.bodyweightEntries ?? [],
+  });
   // Deliberately not marked as a fresh backup: restoring FROM a file doesn't
   // mean there's now an up-to-date copy of your CURRENT data anywhere else -
   // the "back up soon" nag should only reset when you actually export.
