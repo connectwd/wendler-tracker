@@ -8,7 +8,7 @@ export class StorageError extends Error {
   cause?: unknown;
   constructor(message: string, cause?: unknown) {
     super(message);
-    this.name = 'StorageError';
+    this.name = "StorageError";
     this.cause = cause;
   }
 }
@@ -17,19 +17,19 @@ export class StorageError extends Error {
 export function describeStorageError(err: unknown): string {
   if (err instanceof DOMException) {
     switch (err.name) {
-      case 'QuotaExceededError':
+      case "QuotaExceededError":
         return "Your browser's storage is full. Export a backup (Settings) and free up space, then try again.";
-      case 'InvalidStateError':
-        return 'The local database is in an unexpected state - reloading the page usually fixes this.';
-      case 'VersionError':
-        return 'This tab is running an older version of the app than your data expects - reload the page.';
+      case "InvalidStateError":
+        return "The local database is in an unexpected state - reloading the page usually fixes this.";
+      case "VersionError":
+        return "This tab is running an older version of the app than your data expects - reload the page.";
       default:
         return err.message || `Storage error (${err.name}).`;
     }
   }
   if (err instanceof StorageError) return err.message;
   if (err instanceof Error) return err.message;
-  return 'An unknown storage error occurred.';
+  return "An unknown storage error occurred.";
 }
 
 /** A single surfaced failure, shown in the UI until dismissed or superseded. */

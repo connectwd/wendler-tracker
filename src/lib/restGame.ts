@@ -17,7 +17,7 @@ export interface Obstacle {
   scored: boolean;
 }
 
-export type GameStatus = 'playing' | 'crashed';
+export type GameStatus = "playing" | "crashed";
 
 export interface GameState {
   playerY: number;
@@ -55,13 +55,15 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   maxStepSeconds: 0.1,
 };
 
-export function initGameState(config: GameConfig = DEFAULT_GAME_CONFIG): GameState {
+export function initGameState(
+  config: GameConfig = DEFAULT_GAME_CONFIG,
+): GameState {
   return {
     playerY: config.height / 2,
     velocity: 0,
     obstacles: [],
     score: 0,
-    status: 'playing',
+    status: "playing",
     distanceSinceSpawn: 0,
   };
 }
@@ -85,13 +87,15 @@ export function stepGame(
   dtSeconds: number,
   flap: boolean,
   config: GameConfig = DEFAULT_GAME_CONFIG,
-  random: () => number = Math.random
+  random: () => number = Math.random,
 ): GameState {
-  if (state.status === 'crashed') return state;
+  if (state.status === "crashed") return state;
 
   const dt = Math.min(Math.max(dtSeconds, 0), config.maxStepSeconds);
 
-  const velocity = flap ? config.flapVelocity : state.velocity + config.gravity * dt;
+  const velocity = flap
+    ? config.flapVelocity
+    : state.velocity + config.gravity * dt;
   const playerY = state.playerY + velocity * dt;
 
   let obstacles = state.obstacles
@@ -120,11 +124,16 @@ export function stepGame(
   const hitGround = playerY + config.playerRadius >= config.height;
   const hitCeiling = playerY - config.playerRadius <= 0;
   const hitObstacle = obstacles.some((o) => {
-    const withinX = px + config.playerRadius > o.x && px - config.playerRadius < o.x + config.obstacleWidth;
+    const withinX =
+      px + config.playerRadius > o.x &&
+      px - config.playerRadius < o.x + config.obstacleWidth;
     if (!withinX) return false;
     const gapTop = o.gapY - config.gapHeight / 2;
     const gapBottom = o.gapY + config.gapHeight / 2;
-    return playerY - config.playerRadius < gapTop || playerY + config.playerRadius > gapBottom;
+    return (
+      playerY - config.playerRadius < gapTop ||
+      playerY + config.playerRadius > gapBottom
+    );
   });
 
   const crashed = hitGround || hitCeiling || hitObstacle;
@@ -134,7 +143,7 @@ export function stepGame(
     velocity: crashed ? 0 : velocity,
     obstacles,
     score,
-    status: crashed ? 'crashed' : 'playing',
+    status: crashed ? "crashed" : "playing",
     distanceSinceSpawn,
   };
 }

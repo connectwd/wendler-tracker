@@ -1,25 +1,33 @@
-import type { Unit } from '../types';
-import { calculatePlates, type PlateColor } from '../lib/plates';
+import type { Unit } from "../types";
+import { calculatePlates, type PlateColor } from "../lib/plates";
 
 // Deliberately uses the fixed --plate-color-* tokens, not the general
 // --plate-red/etc. accent tokens - this diagram represents real physical
 // plates on a real bar, so it must stay accurate regardless of theme.
 const COLOR_MAP: Record<PlateColor, string> = {
-  red: 'var(--plate-color-red)',
-  blue: 'var(--plate-color-blue)',
-  yellow: 'var(--plate-color-yellow)',
-  green: 'var(--plate-color-green)',
-  white: 'var(--plate-color-white)',
-  black: '#3a3c44',
+  red: "var(--plate-color-red)",
+  blue: "var(--plate-color-blue)",
+  yellow: "var(--plate-color-yellow)",
+  green: "var(--plate-color-green)",
+  white: "var(--plate-color-white)",
+  black: "#3a3c44",
 };
 
-export function PlateBar({ weight, barWeight, unit }: { weight: number; barWeight: number; unit: Unit }) {
+export function PlateBar({
+  weight,
+  barWeight,
+  unit,
+}: {
+  weight: number;
+  barWeight: number;
+  unit: Unit;
+}) {
   const result = calculatePlates(weight, barWeight, unit);
 
   if (result.perSide.length === 0) {
     return (
-      <p style={{ fontSize: 12, margin: '4px 0 0' }}>
-        {weight <= barWeight ? 'Bar only' : 'Below bar weight'}
+      <p style={{ fontSize: 12, margin: "4px 0 0" }}>
+        {weight <= barWeight ? "Bar only" : "Below bar weight"}
       </p>
     );
   }
@@ -41,8 +49,12 @@ export function PlateBar({ weight, barWeight, unit }: { weight: number; barWeigh
         ))}
       </div>
       <p style={{ fontSize: 12, margin: 0 }}>
-        Per side: {result.perSide.map((p) => parseFloat(p.weight.toFixed(2)).toString()).join(' + ')}
-        {!result.achievable && ` (${result.remainder}${unit} short — no plate combo for that)`}
+        Per side:{" "}
+        {result.perSide
+          .map((p) => parseFloat(p.weight.toFixed(2)).toString())
+          .join(" + ")}
+        {!result.achievable &&
+          ` (${result.remainder}${unit} short — no plate combo for that)`}
       </p>
     </div>
   );

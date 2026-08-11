@@ -1,5 +1,12 @@
-import type { WeekNumber, LoggedSet, LiftConfig, Cycle, Settings, Workout } from '../types';
-import { makeId } from './id';
+import type {
+  WeekNumber,
+  LoggedSet,
+  LiftConfig,
+  Cycle,
+  Settings,
+  Workout,
+} from "../types";
+import { makeId } from "./id";
 
 /**
  * Standard Wendler 5/3/1 main-work percentage/rep scheme.
@@ -48,10 +55,10 @@ export const BBS_SET_COUNT = 10;
 export const BBS_REPS = 5;
 
 export const WEEK_LABELS: Record<WeekNumber, string> = {
-  1: 'Week 1 (5s)',
-  2: 'Week 2 (3s)',
-  3: 'Week 3 (5/3/1)',
-  4: 'Week 4 (Deload)',
+  1: "Week 1 (5s)",
+  2: "Week 2 (3s)",
+  3: "Week 3 (5/3/1)",
+  4: "Week 4 (Deload)",
 };
 
 /** Round to the nearest multiple of `increment` (half rounds up, matching standard plate-math conventions). */
@@ -61,7 +68,10 @@ export function roundToIncrement(weight: number, increment: number): number {
 }
 
 /** Training Max = a percentage (default 90%) of a true or estimated 1RM. Not rounded - kept exact so small increments compound correctly over many cycles. */
-export function calculateTrainingMax(oneRepMax: number, percentageOfMax = 0.9): number {
+export function calculateTrainingMax(
+  oneRepMax: number,
+  percentageOfMax = 0.9,
+): number {
   return oneRepMax * percentageOfMax;
 }
 
@@ -91,11 +101,14 @@ export interface SetPrescription {
 function buildSetPrescriptions(
   trainingMax: number,
   roundingIncrement: number,
-  sets: { percentage: number; reps: number; isAmrap: boolean }[]
+  sets: { percentage: number; reps: number; isAmrap: boolean }[],
 ): SetPrescription[] {
   return sets.map((s, i) => ({
     setNumber: i + 1,
-    targetWeight: roundToIncrement(trainingMax * s.percentage, roundingIncrement),
+    targetWeight: roundToIncrement(
+      trainingMax * s.percentage,
+      roundingIncrement,
+    ),
     targetReps: s.reps,
     isAmrap: s.isAmrap,
   }));
@@ -104,9 +117,13 @@ function buildSetPrescriptions(
 export function generateMainWorkSets(
   trainingMax: number,
   week: WeekNumber,
-  roundingIncrement: number
+  roundingIncrement: number,
 ): SetPrescription[] {
-  return buildSetPrescriptions(trainingMax, roundingIncrement, MAIN_WORK_SCHEME[week]);
+  return buildSetPrescriptions(
+    trainingMax,
+    roundingIncrement,
+    MAIN_WORK_SCHEME[week],
+  );
 }
 
 /**
@@ -120,28 +137,37 @@ export const WARMUP_SCHEME: { percentage: number; reps: number }[] = [
   { percentage: 0.6, reps: 3 },
 ];
 
-export function generateWarmupSets(trainingMax: number, roundingIncrement: number): SetPrescription[] {
+export function generateWarmupSets(
+  trainingMax: number,
+  roundingIncrement: number,
+): SetPrescription[] {
   return buildSetPrescriptions(
     trainingMax,
     roundingIncrement,
-    WARMUP_SCHEME.map((s) => ({ ...s, isAmrap: false }))
+    WARMUP_SCHEME.map((s) => ({ ...s, isAmrap: false })),
   );
 }
 
 export function generateBbsSets(
   trainingMax: number,
   week: WeekNumber,
-  roundingIncrement: number
+  roundingIncrement: number,
 ): SetPrescription[] {
   const percentage = FSL_PERCENTAGE[week];
   return buildSetPrescriptions(
     trainingMax,
     roundingIncrement,
-    Array.from({ length: BBS_SET_COUNT }, () => ({ percentage, reps: BBS_REPS, isAmrap: false }))
+    Array.from({ length: BBS_SET_COUNT }, () => ({
+      percentage,
+      reps: BBS_REPS,
+      isAmrap: false,
+    })),
   );
 }
 
-export function prescriptionsToLoggedSets(prescriptions: SetPrescription[]): LoggedSet[] {
+export function prescriptionsToLoggedSets(
+  prescriptions: SetPrescription[],
+): LoggedSet[] {
   return prescriptions.map((p) => ({
     setNumber: p.setNumber,
     targetWeight: p.targetWeight,
@@ -160,7 +186,10 @@ export function prescriptionsToLoggedSets(prescriptions: SetPrescription[]): Log
  * weights derived from it are. Verified: 166.5 + 3 = 169.5 across cycles
  * in the source spreadsheet, never rounded to a "cleaner" number.
  */
-export function nextCycleTrainingMax(previousTM: number, cycleIncrement: number): number {
+export function nextCycleTrainingMax(
+  previousTM: number,
+  cycleIncrement: number,
+): number {
   return previousTM + cycleIncrement;
 }
 
@@ -172,19 +201,21 @@ export function nextCycleTrainingMax(previousTM: number, cycleIncrement: number)
 export function generateWorkoutsForCycle(
   cycle: Cycle,
   lifts: LiftConfig[],
-  settings: Settings
+  settings: Settings,
 ): Workout[] {
   const workouts: Workout[] = [];
   for (const lift of lifts) {
     const tm = cycle.trainingMaxes[lift.id];
     if (tm === undefined) continue;
     for (const week of [1, 2, 3, 4] as WeekNumber[]) {
-      const warmupSets = prescriptionsToLoggedSets(generateWarmupSets(tm, settings.roundingIncrement));
+      const warmupSets = prescriptionsToLoggedSets(
+        generateWarmupSets(tm, settings.roundingIncrement),
+      );
       const mainSets = prescriptionsToLoggedSets(
-        generateMainWorkSets(tm, week, settings.roundingIncrement)
+        generateMainWorkSets(tm, week, settings.roundingIncrement),
       );
       const bbsSets = prescriptionsToLoggedSets(
-        generateBbsSets(tm, week, settings.roundingIncrement)
+        generateBbsSets(tm, week, settings.roundingIncrement),
       );
       workouts.push({
         id: makeId(),
@@ -197,9 +228,9 @@ export function generateWorkoutsForCycle(
         bbsSets,
         accessories: [],
         estimatedOneRepMax: null,
-        status: 'pending',
+        status: "pending",
         bodyweight: null,
-        notes: '',
+        notes: "",
       });
     }
   }
@@ -207,7 +238,11 @@ export function generateWorkoutsForCycle(
 }
 
 /** Builds the next Cycle record: bumps cycle number, carries each lift's TM forward by its configured increment. */
-export function buildNextCycle(previousCycle: Cycle, lifts: LiftConfig[], startDate: string): Cycle {
+export function buildNextCycle(
+  previousCycle: Cycle,
+  lifts: LiftConfig[],
+  startDate: string,
+): Cycle {
   const trainingMaxes: Record<string, number> = {};
   for (const lift of lifts) {
     const prevTM = previousCycle.trainingMaxes[lift.id] ?? 0;
@@ -218,7 +253,7 @@ export function buildNextCycle(previousCycle: Cycle, lifts: LiftConfig[], startD
     cycleNumber: previousCycle.cycleNumber + 1,
     startDate,
     trainingMaxes,
-    status: 'active',
+    status: "active",
     completedDate: null,
   };
 }
@@ -229,14 +264,14 @@ export function buildNextCycle(previousCycle: Cycle, lifts: LiftConfig[], startD
 export function buildFirstCycle(
   _lifts: LiftConfig[],
   trainingMaxes: Record<string, number>,
-  startDate: string
+  startDate: string,
 ): Cycle {
   return {
     id: makeId(),
     cycleNumber: 1,
     startDate,
     trainingMaxes,
-    status: 'active',
+    status: "active",
     completedDate: null,
   };
 }
@@ -253,21 +288,38 @@ export function buildFirstCycle(
 export function regenerateWorkoutForNewTrainingMax(
   workout: Workout,
   newTrainingMax: number,
-  roundingIncrement: number
+  roundingIncrement: number,
 ): Workout {
-  function mergeSets(existing: LoggedSet[], prescriptions: SetPrescription[]): LoggedSet[] {
+  function mergeSets(
+    existing: LoggedSet[],
+    prescriptions: SetPrescription[],
+  ): LoggedSet[] {
     return existing.map((set, i) => {
       if (set.completed) return set;
       const p = prescriptions[i];
       if (!p) return set;
-      return { ...set, targetWeight: p.targetWeight, targetReps: p.targetReps, isAmrap: p.isAmrap };
+      return {
+        ...set,
+        targetWeight: p.targetWeight,
+        targetReps: p.targetReps,
+        isAmrap: p.isAmrap,
+      };
     });
   }
 
   return {
     ...workout,
-    warmupSets: mergeSets(workout.warmupSets, generateWarmupSets(newTrainingMax, roundingIncrement)),
-    mainSets: mergeSets(workout.mainSets, generateMainWorkSets(newTrainingMax, workout.week, roundingIncrement)),
-    bbsSets: mergeSets(workout.bbsSets, generateBbsSets(newTrainingMax, workout.week, roundingIncrement)),
+    warmupSets: mergeSets(
+      workout.warmupSets,
+      generateWarmupSets(newTrainingMax, roundingIncrement),
+    ),
+    mainSets: mergeSets(
+      workout.mainSets,
+      generateMainWorkSets(newTrainingMax, workout.week, roundingIncrement),
+    ),
+    bbsSets: mergeSets(
+      workout.bbsSets,
+      generateBbsSets(newTrainingMax, workout.week, roundingIncrement),
+    ),
   };
 }

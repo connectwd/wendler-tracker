@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import type { LiftConfig, LoggedAccessoryExercise, LoggedSet, Settings, Workout } from '../types';
-import { estimateOneRepMax } from '../lib/wendler';
-import { findLastAccessorySelection } from '../lib/accessories';
-import { defaultRestSeconds, type WorkoutSection } from '../lib/rest';
-import { PlateBar } from './PlateBar';
-import { AccessoryWork } from './AccessoryWork';
-import { RestTimer } from './RestTimer';
-import { useWakeLock } from '../hooks/useWakeLock';
-import { useBackable } from '../hooks/useBackable';
+import { useState } from "react";
+import type {
+  LiftConfig,
+  LoggedAccessoryExercise,
+  LoggedSet,
+  Settings,
+  Workout,
+} from "../types";
+import { estimateOneRepMax } from "../lib/wendler";
+import { findLastAccessorySelection } from "../lib/accessories";
+import { defaultRestSeconds, type WorkoutSection } from "../lib/rest";
+import { PlateBar } from "./PlateBar";
+import { AccessoryWork } from "./AccessoryWork";
+import { RestTimer } from "./RestTimer";
+import { useWakeLock } from "../hooks/useWakeLock";
+import { useBackable } from "../hooks/useBackable";
 
 interface WorkoutSessionProps {
   workout: Workout;
@@ -26,10 +32,10 @@ interface WorkoutSessionProps {
 }
 
 const SECTION_LABELS: Record<WorkoutSection, string> = {
-  warmup: 'Warm-up',
-  main: 'Main work',
-  bbs: 'Boring But Strong',
-  accessory: 'Accessory',
+  warmup: "Warm-up",
+  main: "Main work",
+  bbs: "Boring But Strong",
+  accessory: "Accessory",
 };
 
 export function WorkoutSession({
@@ -50,22 +56,30 @@ export function WorkoutSession({
   // closes it via handleBack below instead of exiting the installed PWA.
   const { goBack, closeSilently } = useBackable(handleBack);
 
-  const [warmupChecked, setWarmupChecked] = useState<boolean[]>(workout.warmupSets.map((s) => s.completed));
+  const [warmupChecked, setWarmupChecked] = useState<boolean[]>(
+    workout.warmupSets.map((s) => s.completed),
+  );
   const [mainSets, setMainSets] = useState<LoggedSet[]>(workout.mainSets);
   const [bbsCompletedCount, setBbsCompletedCount] = useState(
-    workout.bbsSets.filter((s) => s.completed).length
+    workout.bbsSets.filter((s) => s.completed).length,
   );
-  const [bbsRepsOverride, setBbsRepsOverride] = useState<string>('');
+  const [bbsRepsOverride, setBbsRepsOverride] = useState<string>("");
   const [notes, setNotes] = useState(workout.notes);
   const [dirty, setDirty] = useState(false);
-  const [accessories, setAccessories] = useState<LoggedAccessoryExercise[]>(workout.accessories ?? []);
-  const [activeRestSection, setActiveRestSection] = useState<WorkoutSection | null>(null);
+  const [accessories, setAccessories] = useState<LoggedAccessoryExercise[]>(
+    workout.accessories ?? [],
+  );
+  const [activeRestSection, setActiveRestSection] =
+    useState<WorkoutSection | null>(null);
 
   // If this session hasn't had accessories picked yet, default to whatever
   // was picked last time this same lift was trained (any prior cycle) rather
   // than making every single session start from a blank 20-exercise picker.
   const [initialAccessories] = useState<LoggedAccessoryExercise[]>(
-    () => workout.accessories ?? findLastAccessorySelection(workout.liftId, allWorkouts, workout.id) ?? []
+    () =>
+      workout.accessories ??
+      findLastAccessorySelection(workout.liftId, allWorkouts, workout.id) ??
+      [],
   );
 
   function handleAccessoriesChange(next: LoggedAccessoryExercise[]) {
@@ -79,7 +93,9 @@ export function WorkoutSession({
   }
 
   function updateMainSet(index: number, patch: Partial<LoggedSet>) {
-    setMainSets((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+    setMainSets((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    );
     setDirty(true);
   }
 
@@ -100,15 +116,18 @@ export function WorkoutSession({
       ? estimateOneRepMax(amrapSet.actualWeight, amrapSet.actualReps)
       : null;
 
-  const previousAmrap = previousWorkout?.mainSets.find((s) => s.isAmrap) ?? null;
-  const isNewPR = liveE1RM !== null && (currentBestE1RM === null || liveE1RM > currentBestE1RM);
+  const previousAmrap =
+    previousWorkout?.mainSets.find((s) => s.isAmrap) ?? null;
+  const isNewPR =
+    liveE1RM !== null &&
+    (currentBestE1RM === null || liveE1RM > currentBestE1RM);
 
   const allMainComplete = mainSets.every((s) => s.completed);
   const bbsWeight = workout.bbsSets[0]?.targetWeight ?? 0;
   const bbsTotalSets = workout.bbsSets.length;
   const bbsDone = bbsCompletedCount >= bbsTotalSets;
 
-  function buildUpdatedWorkout(status: Workout['status']): Workout {
+  function buildUpdatedWorkout(status: Workout["status"]): Workout {
     const finalWarmup: LoggedSet[] = workout.warmupSets.map((s, i) => ({
       ...s,
       completed: warmupChecked[i] ?? false,
@@ -118,7 +137,12 @@ export function WorkoutSession({
     const finalBbs: LoggedSet[] = workout.bbsSets.map((s, i) => ({
       ...s,
       completed: i < bbsCompletedCount,
-      actualReps: i < bbsCompletedCount ? (bbsRepsOverride ? parseInt(bbsRepsOverride, 10) : s.targetReps) : null,
+      actualReps:
+        i < bbsCompletedCount
+          ? bbsRepsOverride
+            ? parseInt(bbsRepsOverride, 10)
+            : s.targetReps
+          : null,
       actualWeight: i < bbsCompletedCount ? s.targetWeight : null,
     }));
 
@@ -133,7 +157,7 @@ export function WorkoutSession({
       // in while warm-up/BBS were never finished, which shouldn't count as a
       // real data point (it used to: this checked `!== 'skipped'`, which let
       // an abandoned partial entry through).
-      estimatedOneRepMax: status === 'completed' ? liveE1RM : null,
+      estimatedOneRepMax: status === "completed" ? liveE1RM : null,
       status,
       date: workout.date ?? new Date().toISOString().slice(0, 10),
       notes,
@@ -141,7 +165,9 @@ export function WorkoutSession({
   }
 
   function handleSave() {
-    onSave(buildUpdatedWorkout(allMainComplete && bbsDone ? 'completed' : 'pending'));
+    onSave(
+      buildUpdatedWorkout(allMainComplete && bbsDone ? "completed" : "pending"),
+    );
     // Save is a deliberate way of closing this screen, not a back gesture -
     // closeSilently consumes the history entry this session opened with
     // without re-running handleBack's unsaved-changes check below.
@@ -149,7 +175,7 @@ export function WorkoutSession({
   }
 
   function handleSkip() {
-    onSave(buildUpdatedWorkout('skipped'));
+    onSave(buildUpdatedWorkout("skipped"));
     closeSilently(onClose);
   }
 
@@ -160,7 +186,12 @@ export function WorkoutSession({
   // so declining the prompt on a swipe still leaves the *next* swipe able to
   // prompt again instead of silently exiting the app.
   function handleBack(): boolean | void {
-    if (dirty && !window.confirm('Discard your changes to this session? Nothing will be saved.')) {
+    if (
+      dirty &&
+      !window.confirm(
+        "Discard your changes to this session? Nothing will be saved.",
+      )
+    ) {
       return true;
     }
     onClose();
@@ -204,17 +235,20 @@ export function WorkoutSession({
 
       {previousWorkout && (
         <p style={{ fontSize: 13 }} data-testid="previous-cycle-comparison">
-          Last cycle, same week:{' '}
-          {previousAmrap?.actualReps != null && previousAmrap.actualWeight != null ? (
+          Last cycle, same week:{" "}
+          {previousAmrap?.actualReps != null &&
+          previousAmrap.actualWeight != null ? (
             <span className="mono-num">
               {previousAmrap.actualWeight}
               {settings.units} × {previousAmrap.actualReps}
-              {previousWorkout.estimatedOneRepMax ? ` (e1RM ${previousWorkout.estimatedOneRepMax.toFixed(0)}${settings.units})` : ''}
+              {previousWorkout.estimatedOneRepMax
+                ? ` (e1RM ${previousWorkout.estimatedOneRepMax.toFixed(0)}${settings.units})`
+                : ""}
             </span>
-          ) : previousWorkout.status === 'skipped' ? (
-            'skipped'
+          ) : previousWorkout.status === "skipped" ? (
+            "skipped"
           ) : (
-            'not logged'
+            "not logged"
           )}
         </p>
       )}
@@ -224,7 +258,7 @@ export function WorkoutSession({
         {workout.warmupSets.map((set, i) => (
           <div className="set-row" key={i}>
             <button
-              className={`set-check ${warmupChecked[i] ? 'checked' : ''}`}
+              className={`set-check ${warmupChecked[i] ? "checked" : ""}`}
               onClick={() => toggleWarmup(i)}
               aria-label={`Mark warm-up set ${i + 1} complete`}
               data-testid={`warmup-check-${i}`}
@@ -242,10 +276,10 @@ export function WorkoutSession({
       <button
         type="button"
         className="btn btn-ghost rest-trigger"
-        onClick={() => startRest('warmup')}
+        onClick={() => startRest("warmup")}
         data-testid="rest-trigger-warmup"
       >
-        ⏱ Start rest ({defaultRestSeconds('warmup', settings)}s)
+        ⏱ Start rest ({defaultRestSeconds("warmup", settings)}s)
       </button>
 
       <h3 style={{ marginTop: 20 }}>Main work</h3>
@@ -253,20 +287,30 @@ export function WorkoutSession({
         {mainSets.map((set, i) => (
           <div className="set-row" key={i}>
             <button
-              className={`set-check ${set.completed ? 'checked' : ''}`}
+              className={`set-check ${set.completed ? "checked" : ""}`}
               onClick={() => toggleMainSet(i)}
               disabled={set.isAmrap}
-              style={set.isAmrap ? { opacity: set.completed ? 1 : 0.4 } : undefined}
-              aria-label={set.isAmrap ? 'Completed once reps are entered' : `Mark set ${i + 1} complete`}
+              style={
+                set.isAmrap ? { opacity: set.completed ? 1 : 0.4 } : undefined
+              }
+              aria-label={
+                set.isAmrap
+                  ? "Completed once reps are entered"
+                  : `Mark set ${i + 1} complete`
+              }
               data-testid={`main-check-${i}`}
             >
               ✓
             </button>
             <div>
-              <div className="mono-num" style={{ fontSize: 16 }} data-testid={`main-target-weight-${i}`}>
+              <div
+                className="mono-num"
+                style={{ fontSize: 16 }}
+                data-testid={`main-target-weight-${i}`}
+              >
                 {set.targetWeight}
                 {settings.units} × {set.targetReps}
-                {set.isAmrap ? '+' : ''}
+                {set.isAmrap ? "+" : ""}
               </div>
               {set.isAmrap && (
                 <div style={{ marginTop: 6 }}>
@@ -274,10 +318,12 @@ export function WorkoutSession({
                     type="number"
                     className="reps-input"
                     placeholder="reps"
-                    value={set.actualReps ?? ''}
+                    value={set.actualReps ?? ""}
                     data-testid="amrap-reps-input"
                     onChange={(e) => {
-                      const reps = e.target.value ? parseInt(e.target.value, 10) : null;
+                      const reps = e.target.value
+                        ? parseInt(e.target.value, 10)
+                        : null;
                       updateMainSet(i, {
                         actualReps: reps,
                         actualWeight: set.targetWeight,
@@ -285,7 +331,15 @@ export function WorkoutSession({
                       });
                     }}
                   />
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>reps completed</span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      marginLeft: 8,
+                    }}
+                  >
+                    reps completed
+                  </span>
                 </div>
               )}
             </div>
@@ -295,18 +349,22 @@ export function WorkoutSession({
       </div>
       {amrapSet && liveE1RM !== null && (
         <p style={{ fontSize: 13 }} data-testid="live-e1rm">
-          Estimated 1RM from that set: <span className="mono-num">{liveE1RM.toFixed(1)}{settings.units}</span>
+          Estimated 1RM from that set:{" "}
+          <span className="mono-num">
+            {liveE1RM.toFixed(1)}
+            {settings.units}
+          </span>
           {isNewPR && (
             <span
               data-testid="new-pr-badge"
               style={{
                 marginLeft: 8,
-                color: 'var(--plate-red)',
-                fontFamily: 'var(--font-display)',
+                color: "var(--plate-red)",
+                fontFamily: "var(--font-display)",
                 fontWeight: 600,
                 fontSize: 12,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
               }}
             >
               New PR!
@@ -314,24 +372,31 @@ export function WorkoutSession({
           )}
         </p>
       )}
-      <PlateBar weight={mainSets[mainSets.length - 1].targetWeight} barWeight={settings.barWeight} unit={settings.units} />
+      <PlateBar
+        weight={mainSets[mainSets.length - 1].targetWeight}
+        barWeight={settings.barWeight}
+        unit={settings.units}
+      />
       <button
         type="button"
         className="btn btn-ghost rest-trigger"
-        onClick={() => startRest('main')}
+        onClick={() => startRest("main")}
         data-testid="rest-trigger-main"
       >
-        ⏱ Start rest ({defaultRestSeconds('main', settings)}s)
+        ⏱ Start rest ({defaultRestSeconds("main", settings)}s)
       </button>
 
-      <h3 style={{ marginTop: 20 }}>Boring But Strong — {bbsTotalSets} × 5 @ {bbsWeight}{settings.units}</h3>
+      <h3 style={{ marginTop: 20 }}>
+        Boring But Strong — {bbsTotalSets} × 5 @ {bbsWeight}
+        {settings.units}
+      </h3>
       <div className="card">
         <div className="row">
           <span>Sets completed</span>
-          <div className="row" style={{ gap: 10, width: 'auto' }}>
+          <div className="row" style={{ gap: 10, width: "auto" }}>
             <button
               className="btn"
-              style={{ padding: '6px 14px', minHeight: 'auto' }}
+              style={{ padding: "6px 14px", minHeight: "auto" }}
               onClick={() => {
                 setBbsCompletedCount((c) => Math.max(0, c - 1));
                 setDirty(true);
@@ -341,12 +406,16 @@ export function WorkoutSession({
             >
               −
             </button>
-            <span className="mono-num" style={{ fontSize: 18, minWidth: 36, textAlign: 'center' }} data-testid="bbs-count">
+            <span
+              className="mono-num"
+              style={{ fontSize: 18, minWidth: 36, textAlign: "center" }}
+              data-testid="bbs-count"
+            >
               {bbsCompletedCount}/{bbsTotalSets}
             </span>
             <button
               className="btn"
-              style={{ padding: '6px 14px', minHeight: 'auto' }}
+              style={{ padding: "6px 14px", minHeight: "auto" }}
               onClick={() => {
                 setBbsCompletedCount((c) => Math.min(bbsTotalSets, c + 1));
                 setDirty(true);
@@ -359,7 +428,9 @@ export function WorkoutSession({
           </div>
         </div>
         <div className="field" style={{ marginTop: 12 }}>
-          <label htmlFor="bbs-reps-override">If you couldn't hit 5 on every set, note reps here (optional)</label>
+          <label htmlFor="bbs-reps-override">
+            If you couldn't hit 5 on every set, note reps here (optional)
+          </label>
           <input
             id="bbs-reps-override"
             type="number"
@@ -372,14 +443,18 @@ export function WorkoutSession({
           />
         </div>
       </div>
-      <PlateBar weight={bbsWeight} barWeight={settings.barWeight} unit={settings.units} />
+      <PlateBar
+        weight={bbsWeight}
+        barWeight={settings.barWeight}
+        unit={settings.units}
+      />
       <button
         type="button"
         className="btn btn-ghost rest-trigger"
-        onClick={() => startRest('bbs')}
+        onClick={() => startRest("bbs")}
         data-testid="rest-trigger-bbs"
       >
-        ⏱ Start rest ({defaultRestSeconds('bbs', settings)}s)
+        ⏱ Start rest ({defaultRestSeconds("bbs", settings)}s)
       </button>
 
       <h3 style={{ marginTop: 20 }}>Accessory work</h3>
@@ -393,10 +468,10 @@ export function WorkoutSession({
       <button
         type="button"
         className="btn btn-ghost rest-trigger"
-        onClick={() => startRest('accessory')}
+        onClick={() => startRest("accessory")}
         data-testid="rest-trigger-accessory"
       >
-        ⏱ Start rest ({defaultRestSeconds('accessory', settings)}s)
+        ⏱ Start rest ({defaultRestSeconds("accessory", settings)}s)
       </button>
 
       <div className="field" style={{ marginTop: 16 }}>
@@ -413,10 +488,20 @@ export function WorkoutSession({
         />
       </div>
 
-      <button className="btn btn-primary btn-block" style={{ marginTop: 20 }} onClick={handleSave} data-testid="save-session-btn">
+      <button
+        className="btn btn-primary btn-block"
+        style={{ marginTop: 20 }}
+        onClick={handleSave}
+        data-testid="save-session-btn"
+      >
         Save session
       </button>
-      <button className="btn btn-block btn-ghost" style={{ marginTop: 8 }} onClick={handleSkip} data-testid="skip-session-btn">
+      <button
+        className="btn btn-block btn-ghost"
+        style={{ marginTop: 8 }}
+        onClick={handleSkip}
+        data-testid="skip-session-btn"
+      >
         Skip / rest this session
       </button>
     </div>

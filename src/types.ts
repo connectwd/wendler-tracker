@@ -2,7 +2,7 @@
 // Everything here is plain data (no functions) so it can be serialized
 // straight to IndexedDB / JSON backups without transformation.
 
-export type Unit = 'kg' | 'lb';
+export type Unit = "kg" | "lb";
 
 export type WeekNumber = 1 | 2 | 3 | 4;
 
@@ -28,7 +28,7 @@ export interface Settings {
   bodyweight: number | null;
   onboardingComplete: boolean;
   /** Purely cosmetic, defaults to 'serious' for anyone who onboarded before this existed. */
-  theme: 'serious' | 'arcade';
+  theme: "serious" | "arcade";
   /** Suggested rest duration (seconds) for warm-up/BBS/accessory sets - shorter, higher-volume work. Editable in Settings. */
   restTimerShortSeconds: number;
   /** Suggested rest duration (seconds) for main/AMRAP work - the heaviest, most fatiguing sets. Editable in Settings. */
@@ -43,7 +43,7 @@ export interface Cycle {
   startDate: string; // ISO date string (yyyy-mm-dd)
   /** Training Max used for every calculation in this cycle, keyed by LiftConfig.id */
   trainingMaxes: Record<string, number>;
-  status: 'active' | 'completed';
+  status: "active" | "completed";
   completedDate: string | null;
 }
 
@@ -59,9 +59,9 @@ export interface LoggedSet {
   completed: boolean;
 }
 
-export type WorkoutStatus = 'pending' | 'completed' | 'skipped';
+export type WorkoutStatus = "pending" | "completed" | "skipped";
 
-export type AccessoryCategory = 'push' | 'pull' | 'core';
+export type AccessoryCategory = "push" | "pull" | "core";
 
 export interface AccessorySet {
   setNumber: number;
@@ -129,7 +129,7 @@ export const SCHEMA_VERSION = 3;
 export interface BackupFile {
   schemaVersion: number;
   exportedAt: string;
-  app: 'wendler-tracker';
+  app: "wendler-tracker";
   data: AppData;
 }
 
@@ -153,7 +153,7 @@ export interface SyncState {
   lastError: string | null;
 }
 
-export type SyncStatus = 'disabled' | 'syncing' | 'idle' | 'error' | 'conflict';
+export type SyncStatus = "disabled" | "syncing" | "idle" | "error" | "conflict";
 
 export interface PendingConflict {
   remote: SyncPayload;
@@ -164,7 +164,6 @@ export interface PendingConflict {
 export interface SyncPayload {
   schemaVersion: number;
   updatedAt: string;
-  app: 'wendler-tracker';
+  app: "wendler-tracker";
   data: AppData;
 }
-

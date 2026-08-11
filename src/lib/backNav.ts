@@ -49,7 +49,10 @@ export function removeBackHandler(handler: BackHandler): void {
  * re-run the layer's gated back logic (e.g. an "unsaved changes?" prompt that
  * no longer applies once you've actually saved).
  */
-export function replaceBackHandler(oldHandler: BackHandler, newHandler: BackHandler): void {
+export function replaceBackHandler(
+  oldHandler: BackHandler,
+  newHandler: BackHandler,
+): void {
   const index = stack.lastIndexOf(oldHandler);
   if (index !== -1) stack[index] = newHandler;
 }
@@ -72,5 +75,5 @@ export function backStackDepth(): number {
 export function initBackHandling(): void {
   if (listening) return;
   listening = true;
-  window.addEventListener('popstate', consumeTopBackHandler);
+  window.addEventListener("popstate", consumeTopBackHandler);
 }

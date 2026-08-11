@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { clampRestSeconds, formatCountdown } from '../lib/rest';
-import { RestGame } from './RestGame';
-import { useBackable } from '../hooks/useBackable';
+import { useEffect, useRef, useState } from "react";
+import { clampRestSeconds, formatCountdown } from "../lib/rest";
+import { RestGame } from "./RestGame";
+import { useBackable } from "../hooks/useBackable";
 
 interface RestTimerProps {
   defaultSeconds: number;
@@ -15,13 +15,15 @@ interface RestTimerProps {
 function playChime() {
   try {
     const AudioContextCtor =
-      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
     if (!AudioContextCtor) return;
     const ctx = new AudioContextCtor();
     const note = (freq: number, startOffset: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
+      osc.type = "sine";
       osc.frequency.value = freq;
       const start = ctx.currentTime + startOffset;
       gain.gain.setValueAtTime(0.0001, start);
@@ -39,7 +41,13 @@ function playChime() {
   }
 }
 
-export function RestTimer({ defaultSeconds, sectionLabel, highScore, onNewHighScore, onClose }: RestTimerProps) {
+export function RestTimer({
+  defaultSeconds,
+  sectionLabel,
+  highScore,
+  onNewHighScore,
+  onClose,
+}: RestTimerProps) {
   // Registers the overlay as its own back-able layer, nested on top of the
   // workout session underneath it - one swipe closes just the timer and
   // returns to the session, a second swipe closes the session itself.
@@ -66,10 +74,10 @@ export function RestTimer({ defaultSeconds, sectionLabel, highScore, onNewHighSc
     // leave the countdown wrong when you come back - see visibilitychange
     // below, and the same approach used for PWA update polling.
     const interval = setInterval(recompute, 250);
-    document.addEventListener('visibilitychange', recompute);
+    document.addEventListener("visibilitychange", recompute);
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', recompute);
+      document.removeEventListener("visibilitychange", recompute);
     };
   }, [endAt]);
 
@@ -88,20 +96,42 @@ export function RestTimer({ defaultSeconds, sectionLabel, highScore, onNewHighSc
   return (
     <div className="screen rest-timer-overlay" data-testid="rest-timer-overlay">
       <p className="eyebrow">{sectionLabel} rest</p>
-      <div className={`rest-timer-display${done ? ' done' : ''}`} data-testid="rest-timer-countdown">
+      <div
+        className={`rest-timer-display${done ? " done" : ""}`}
+        data-testid="rest-timer-countdown"
+      >
         {done ? "Rest's over!" : formatCountdown(secondsLeft)}
       </div>
 
-      <div className="row" style={{ gap: 8, justifyContent: 'center', margin: '10px 0' }}>
-        <button type="button" className="btn" onClick={() => adjust(-15)} data-testid="rest-timer-subtract-15">
+      <div
+        className="row"
+        style={{ gap: 8, justifyContent: "center", margin: "10px 0" }}
+      >
+        <button
+          type="button"
+          className="btn"
+          onClick={() => adjust(-15)}
+          data-testid="rest-timer-subtract-15"
+        >
           −15s
         </button>
-        <button type="button" className="btn" onClick={() => adjust(15)} data-testid="rest-timer-add-15">
+        <button
+          type="button"
+          className="btn"
+          onClick={() => adjust(15)}
+          data-testid="rest-timer-add-15"
+        >
           +15s
         </button>
       </div>
 
-      <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
+      <p
+        style={{
+          fontSize: 12,
+          color: "var(--text-faint)",
+          textAlign: "center",
+        }}
+      >
         Tap the plate (or hit space) to flap while you wait.
       </p>
       <RestGame highScore={highScore} onNewHighScore={onNewHighScore} />
@@ -113,7 +143,7 @@ export function RestTimer({ defaultSeconds, sectionLabel, highScore, onNewHighSc
         onClick={goBack}
         data-testid="rest-timer-close-btn"
       >
-        {done ? 'Back to workout' : 'Skip rest'}
+        {done ? "Back to workout" : "Skip rest"}
       </button>
     </div>
   );

@@ -1,26 +1,32 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 // Keep this in sync with vite.config.ts's `base` - if you rename the repo, update both.
-const BASE_PATH = '/wendler-tracker/';
+const BASE_PATH = "/wendler-tracker/";
 const PORT = 4173;
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [["html", { open: "never" }], ["list"]],
 
   use: {
     baseURL: `http://localhost:${PORT}${BASE_PATH}`,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     // Small viewport by default - this is a phone-first app, test it like one.
     viewport: { width: 390, height: 844 },
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } } },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+      },
+    },
     // Uncomment once the chromium suite is green - webkit catches Safari-specific
     // IndexedDB/service-worker quirks that are worth knowing about on an iPhone.
     // { name: 'webkit', use: { ...devices['Desktop Safari'], viewport: { width: 390, height: 844 } } },

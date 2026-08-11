@@ -4,7 +4,7 @@
  * for the caller to propagate silently through every downstream calculation.
  */
 export function parsePositiveWeight(input: string): number | null {
-  if (input.trim() === '') return null;
+  if (input.trim() === "") return null;
   const value = parseFloat(input);
   if (!Number.isFinite(value) || value <= 0) return null;
   return value;

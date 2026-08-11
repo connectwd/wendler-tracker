@@ -1,8 +1,8 @@
-import type { AppData, SyncConfig, SyncPayload } from '../types';
-import { SCHEMA_VERSION } from '../types';
-import { utf8ToBase64, base64ToUtf8 } from './base64';
+import type { AppData, SyncConfig, SyncPayload } from "../types";
+import { SCHEMA_VERSION } from "../types";
+import { utf8ToBase64, base64ToUtf8 } from "./base64";
 
-const API_BASE = 'https://api.github.com';
+const API_BASE = "https://api.github.com";
 
 export class SyncAuthError extends Error {}
 
@@ -14,7 +14,7 @@ export class SyncConflictError extends Error {
   remotePayload: SyncPayload;
   remoteSha: string;
   constructor(remotePayload: SyncPayload, remoteSha: string) {
-    super('Remote data has changed since the last sync from this device.');
+    super("Remote data has changed since the last sync from this device.");
     this.remotePayload = remotePayload;
     this.remoteSha = remoteSha;
   }
@@ -22,18 +22,18 @@ export class SyncConflictError extends Error {
 
 function contentsUrl(config: SyncConfig): string {
   const encodedPath = config.path
-    .split('/')
+    .split("/")
     .filter(Boolean)
     .map(encodeURIComponent)
-    .join('/');
+    .join("/");
   return `${API_BASE}/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${encodedPath}`;
 }
 
 function authHeaders(config: SyncConfig): HeadersInit {
   return {
     Authorization: `Bearer ${config.token}`,
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
   };
 }
 
@@ -55,7 +55,11 @@ function sleep(ms: number): Promise<void> {
 }
 
 /** Exponential backoff with jitter, or however long GitHub's Retry-After says to wait if it's present. */
-function retryDelayMs(attempt: number, baseDelayMs: number, retryAfterHeader: string | null): number {
+function retryDelayMs(
+  attempt: number,
+  baseDelayMs: number,
+  retryAfterHeader: string | null,
+): number {
   if (retryAfterHeader) {
     const seconds = parseInt(retryAfterHeader, 10);
     if (Number.isFinite(seconds) && seconds > 0) return seconds * 1000;
@@ -70,7 +74,11 @@ interface FetchRetryOptions {
   baseDelayMs?: number;
 }
 
-async function fetchWithRetry(url: string, init: RequestInit, options: FetchRetryOptions = {}): Promise<Response> {
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  options: FetchRetryOptions = {},
+): Promise<Response> {
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   const baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
   let lastNetworkError: unknown;
@@ -82,7 +90,9 @@ async function fetchWithRetry(url: string, init: RequestInit, options: FetchRetr
       if (res.ok || !RETRYABLE_STATUSES.has(res.status) || isLastAttempt) {
         return res;
       }
-      await sleep(retryDelayMs(attempt, baseDelayMs, res.headers.get('Retry-After')));
+      await sleep(
+        retryDelayMs(attempt, baseDelayMs, res.headers.get("Retry-After")),
+      );
     } catch (err) {
       lastNetworkError = err;
       if (isLastAttempt) throw err;
@@ -90,25 +100,29 @@ async function fetchWithRetry(url: string, init: RequestInit, options: FetchRetr
     }
   }
   // Unreachable - the loop above always returns or throws - but satisfies the return type.
-  throw lastNetworkError ?? new Error('Ran out of retry attempts.');
+  throw lastNetworkError ?? new Error("Ran out of retry attempts.");
 }
 
 /** True if a 403 is GitHub's rate limiting rather than a genuinely bad token. */
 function isRateLimited(res: Response): boolean {
-  return res.status === 403 && res.headers.get('X-RateLimit-Remaining') === '0';
+  return res.status === 403 && res.headers.get("X-RateLimit-Remaining") === "0";
 }
 
 function throwForAuthOrRateLimit(res: Response): never {
   if (isRateLimited(res)) {
-    const resetHeader = res.headers.get('X-RateLimit-Reset');
-    const resetAt = resetHeader ? new Date(parseInt(resetHeader, 10) * 1000) : null;
+    const resetHeader = res.headers.get("X-RateLimit-Reset");
+    const resetAt = resetHeader
+      ? new Date(parseInt(resetHeader, 10) * 1000)
+      : null;
     throw new SyncRateLimitError(
       resetAt
         ? `GitHub's API rate limit was hit - this should clear up by ${resetAt.toLocaleTimeString()}.`
-        : "GitHub's API rate limit was hit - this should clear up shortly."
+        : "GitHub's API rate limit was hit - this should clear up shortly.",
     );
   }
-  throw new SyncAuthError("GitHub rejected the token - check it has Contents read/write on this repo.");
+  throw new SyncAuthError(
+    "GitHub rejected the token - check it has Contents read/write on this repo.",
+  );
 }
 
 export interface RemoteFile {
@@ -117,8 +131,12 @@ export interface RemoteFile {
 }
 
 /** Fetches the current synced file. Returns null if it doesn't exist yet (first sync ever). */
-export async function pullRemote(config: SyncConfig): Promise<RemoteFile | null> {
-  const res = await fetchWithRetry(contentsUrl(config), { headers: authHeaders(config) });
+export async function pullRemote(
+  config: SyncConfig,
+): Promise<RemoteFile | null> {
+  const res = await fetchWithRetry(contentsUrl(config), {
+    headers: authHeaders(config),
+  });
   if (res.status === 404) return null;
   if (res.status === 401 || res.status === 403) throwForAuthOrRateLimit(res);
   if (!res.ok) {
@@ -139,10 +157,15 @@ export async function pullRemote(config: SyncConfig): Promise<RemoteFile | null>
 export async function pushRemote(
   config: SyncConfig,
   data: AppData,
-  knownSha: string | null
+  knownSha: string | null,
 ): Promise<{ sha: string; updatedAt: string }> {
   const updatedAt = new Date().toISOString();
-  const payload: SyncPayload = { schemaVersion: SCHEMA_VERSION, updatedAt, app: 'wendler-tracker', data };
+  const payload: SyncPayload = {
+    schemaVersion: SCHEMA_VERSION,
+    updatedAt,
+    app: "wendler-tracker",
+    data,
+  };
   const body: Record<string, unknown> = {
     message: `Sync ${updatedAt}`,
     content: utf8ToBase64(JSON.stringify(payload, null, 2)),
@@ -150,15 +173,17 @@ export async function pushRemote(
   if (knownSha) body.sha = knownSha;
 
   const res = await fetchWithRetry(contentsUrl(config), {
-    method: 'PUT',
-    headers: { ...authHeaders(config), 'Content-Type': 'application/json' },
+    method: "PUT",
+    headers: { ...authHeaders(config), "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
   if (res.status === 409 || res.status === 422) {
     const remote = await pullRemote(config);
     if (remote) throw new SyncConflictError(remote.payload, remote.sha);
-    throw new Error('GitHub reported a sync conflict but the remote file could not be re-fetched.');
+    throw new Error(
+      "GitHub reported a sync conflict but the remote file could not be re-fetched.",
+    );
   }
   if (res.status === 401 || res.status === 403) throwForAuthOrRateLimit(res);
   if (!res.ok) {
@@ -169,25 +194,35 @@ export async function pushRemote(
 }
 
 export async function testConnection(
-  config: SyncConfig
+  config: SyncConfig,
 ): Promise<{ ok: true; fileExists: boolean } | { ok: false; message: string }> {
   try {
     const repoRes = await fetchWithRetry(
       `${API_BASE}/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}`,
-      { headers: authHeaders(config) }
+      { headers: authHeaders(config) },
     );
     if (repoRes.status === 404) {
-      return { ok: false, message: `Repo "${config.owner}/${config.repo}" not found, or this token can't see it.` };
+      return {
+        ok: false,
+        message: `Repo "${config.owner}/${config.repo}" not found, or this token can't see it.`,
+      };
     }
     if (repoRes.status === 401 || repoRes.status === 403) {
       throwForAuthOrRateLimit(repoRes);
     }
     if (!repoRes.ok) {
-      return { ok: false, message: `Unexpected response from GitHub (${repoRes.status}).` };
+      return {
+        ok: false,
+        message: `Unexpected response from GitHub (${repoRes.status}).`,
+      };
     }
     const remote = await pullRemote(config);
     return { ok: true, fileExists: remote !== null };
   } catch (err) {
-    return { ok: false, message: err instanceof Error ? err.message : 'Unknown error contacting GitHub.' };
+    return {
+      ok: false,
+      message:
+        err instanceof Error ? err.message : "Unknown error contacting GitHub.",
+    };
   }
 }

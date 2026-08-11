@@ -1,4 +1,4 @@
-import type { BodyweightEntry, LiftConfig, Workout } from '../types';
+import type { BodyweightEntry, LiftConfig, Workout } from "../types";
 
 /** Today's date as yyyy-mm-dd, matching how every other date in this app is stored. */
 export function todayDateString(): string {
@@ -6,17 +6,24 @@ export function todayDateString(): string {
 }
 
 /** Builds the entry a log action would write. `id` is the date itself - see the BodyweightEntry comment in types.ts. */
-export function buildBodyweightEntry(date: string, weight: number): BodyweightEntry {
+export function buildBodyweightEntry(
+  date: string,
+  weight: number,
+): BodyweightEntry {
   return { id: date, date, weight };
 }
 
 /** Entries in chronological order, oldest first - every function below assumes this ordering rather than re-sorting internally. */
 export function sortedByDate(entries: BodyweightEntry[]): BodyweightEntry[] {
-  return entries.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return entries
+    .slice()
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
 /** The single most recent weigh-in, or null if nothing's been logged yet. */
-export function latestBodyweight(entries: BodyweightEntry[]): BodyweightEntry | null {
+export function latestBodyweight(
+  entries: BodyweightEntry[],
+): BodyweightEntry | null {
   const sorted = sortedByDate(entries);
   return sorted.length > 0 ? sorted[sorted.length - 1] : null;
 }
@@ -27,7 +34,10 @@ export function latestBodyweight(entries: BodyweightEntry[]): BodyweightEntry | 
  * that exact day. Returns null if there's no entry on or before `date` yet
  * (e.g. you're looking at a workout logged before you ever weighed in).
  */
-export function bodyweightAsOf(entries: BodyweightEntry[], date: string): number | null {
+export function bodyweightAsOf(
+  entries: BodyweightEntry[],
+  date: string,
+): number | null {
   const sorted = sortedByDate(entries);
   let result: number | null = null;
   for (const entry of sorted) {
@@ -43,8 +53,13 @@ export interface ChartPoint {
 }
 
 /** Bodyweight over time, oldest first, x as a sequential index (matches how the e1RM chart plots real dates - see ProgressCharts.tsx). */
-export function bodyweightTrendPoints(entries: BodyweightEntry[]): ChartPoint[] {
-  return sortedByDate(entries).map((e, i) => ({ x: i, y: Math.round(e.weight * 10) / 10 }));
+export function bodyweightTrendPoints(
+  entries: BodyweightEntry[],
+): ChartPoint[] {
+  return sortedByDate(entries).map((e, i) => ({
+    x: i,
+    y: Math.round(e.weight * 10) / 10,
+  }));
 }
 
 /**
@@ -61,22 +76,35 @@ export function bodyweightTrendPoints(entries: BodyweightEntry[]): ChartPoint[] 
 export function strengthToBodyweightRatioPoints(
   workouts: Workout[],
   entries: BodyweightEntry[],
-  liftId: string
+  liftId: string,
 ): ChartPoint[] {
   const liftWorkouts = workouts
-    .filter((w) => w.liftId === liftId && w.estimatedOneRepMax !== null && w.date !== null)
+    .filter(
+      (w) =>
+        w.liftId === liftId && w.estimatedOneRepMax !== null && w.date !== null,
+    )
     .sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : 0));
 
   const points: ChartPoint[] = [];
   for (const w of liftWorkouts) {
     const bw = bodyweightAsOf(entries, w.date!);
     if (bw === null || bw <= 0) continue;
-    points.push({ x: points.length, y: Math.round((w.estimatedOneRepMax! / bw) * 1000) / 1000 });
+    points.push({
+      x: points.length,
+      y: Math.round((w.estimatedOneRepMax! / bw) * 1000) / 1000,
+    });
   }
   return points;
 }
 
 /** True if every lift has at least one completed e1RM data point that also has a bodyweight to divide by - used to decide whether the ratio chart section has anything worth showing at all. */
-export function hasAnyRatioData(workouts: Workout[], entries: BodyweightEntry[], lifts: LiftConfig[]): boolean {
-  return lifts.some((lift) => strengthToBodyweightRatioPoints(workouts, entries, lift.id).length > 0);
+export function hasAnyRatioData(
+  workouts: Workout[],
+  entries: BodyweightEntry[],
+  lifts: LiftConfig[],
+): boolean {
+  return lifts.some(
+    (lift) =>
+      strengthToBodyweightRatioPoints(workouts, entries, lift.id).length > 0,
+  );
 }

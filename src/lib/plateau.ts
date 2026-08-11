@@ -1,4 +1,4 @@
-import type { Cycle, Unit, Workout } from '../types';
+import type { Cycle, Unit, Workout } from "../types";
 
 export interface PlateauCheck {
   isPlateaued: boolean;
@@ -22,7 +22,7 @@ export function checkPlateau(
   upToCycleNumber: number,
   cycles: Cycle[],
   workouts: Workout[],
-  unit: Unit
+  unit: Unit,
 ): PlateauCheck {
   const relevantCycles = cycles
     .filter((c) => c.cycleNumber <= upToCycleNumber)
@@ -31,7 +31,9 @@ export function checkPlateau(
 
   const e1rms: number[] = [];
   for (const cycle of relevantCycles) {
-    const week3 = workouts.find((w) => w.cycleId === cycle.id && w.liftId === liftId && w.week === 3);
+    const week3 = workouts.find(
+      (w) => w.cycleId === cycle.id && w.liftId === liftId && w.week === 3,
+    );
     if (week3?.estimatedOneRepMax) e1rms.push(week3.estimatedOneRepMax);
   }
 
@@ -48,13 +50,16 @@ export function checkPlateau(
   }
 
   const reason = isPlateaued
-    ? `Estimated 1RM hasn't improved in ${e1rms.length} cycles (${e1rms.map((v) => v.toFixed(0)).join(' → ')}${unit})`
+    ? `Estimated 1RM hasn't improved in ${e1rms.length} cycles (${e1rms.map((v) => v.toFixed(0)).join(" → ")}${unit})`
     : null;
 
   return { isPlateaued, reason, recentE1RMs: e1rms };
 }
 
 /** Standard 5/3/1 "reset": drop Training Max ~10% and build back up from there with more room to move. */
-export function resetTrainingMax(currentTM: number, resetPercentage = 0.9): number {
+export function resetTrainingMax(
+  currentTM: number,
+  resetPercentage = 0.9,
+): number {
   return currentTM * resetPercentage;
 }

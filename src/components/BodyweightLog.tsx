@@ -1,7 +1,11 @@
-import { useMemo, useState } from 'react';
-import type { BodyweightEntry, Unit } from '../types';
-import { latestBodyweight, sortedByDate, todayDateString } from '../lib/bodyweight';
-import { parsePositiveWeight } from '../lib/validation';
+import { useMemo, useState } from "react";
+import type { BodyweightEntry, Unit } from "../types";
+import {
+  latestBodyweight,
+  sortedByDate,
+  todayDateString,
+} from "../lib/bodyweight";
+import { parsePositiveWeight } from "../lib/validation";
 
 interface BodyweightLogProps {
   entries: BodyweightEntry[];
@@ -10,9 +14,14 @@ interface BodyweightLogProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function BodyweightLog({ entries, units, onLog, onDelete }: BodyweightLogProps) {
+export function BodyweightLog({
+  entries,
+  units,
+  onLog,
+  onDelete,
+}: BodyweightLogProps) {
   const [date, setDate] = useState(todayDateString());
-  const [weight, setWeight] = useState('');
+  const [weight, setWeight] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -28,7 +37,7 @@ export function BodyweightLog({ entries, units, onLog, onDelete }: BodyweightLog
     setSaving(true);
     await onLog(date, parsedWeight);
     setSaving(false);
-    setWeight('');
+    setWeight("");
     setDate(todayDateString());
   }
 
@@ -37,8 +46,15 @@ export function BodyweightLog({ entries, units, onLog, onDelete }: BodyweightLog
       <h3>Body weight</h3>
       {latest ? (
         <p style={{ marginBottom: 10 }}>
-          Current: <span className="mono-num">{latest.weight}{units}</span>
-          <span style={{ color: 'var(--text-faint)' }}> · logged {latest.date}</span>
+          Current:{" "}
+          <span className="mono-num">
+            {latest.weight}
+            {units}
+          </span>
+          <span style={{ color: "var(--text-faint)" }}>
+            {" "}
+            · logged {latest.date}
+          </span>
         </p>
       ) : (
         <p style={{ marginBottom: 10 }}>No weigh-ins logged yet.</p>
@@ -76,26 +92,34 @@ export function BodyweightLog({ entries, units, onLog, onDelete }: BodyweightLog
       {entries.length > 0 && (
         <button
           className="btn btn-ghost"
-          style={{ marginTop: 8, padding: '4px 0' }}
+          style={{ marginTop: 8, padding: "4px 0" }}
           onClick={() => setShowHistory((s) => !s)}
           data-testid="bodyweight-history-toggle"
         >
-          {showHistory ? 'Hide history' : `Show history (${entries.length})`}
+          {showHistory ? "Hide history" : `Show history (${entries.length})`}
         </button>
       )}
       {showHistory && (
         <div className="stack" style={{ marginTop: 8 }}>
           {newestFirst.map((e) => (
-            <div className="row" key={e.id} data-testid={`bodyweight-entry-${e.id}`}>
+            <div
+              className="row"
+              key={e.id}
+              data-testid={`bodyweight-entry-${e.id}`}
+            >
               <span style={{ fontSize: 13 }}>{e.date}</span>
-              <div className="row" style={{ gap: 10, width: 'auto' }}>
+              <div className="row" style={{ gap: 10, width: "auto" }}>
                 <span className="mono-num">
                   {e.weight}
                   {units}
                 </span>
                 <button
                   className="btn btn-ghost"
-                  style={{ padding: '4px 8px', minHeight: 'auto', color: 'var(--plate-red)' }}
+                  style={{
+                    padding: "4px 8px",
+                    minHeight: "auto",
+                    color: "var(--plate-red)",
+                  }}
                   onClick={() => onDelete(e.id)}
                   aria-label={`Delete entry from ${e.date}`}
                   data-testid={`bodyweight-delete-${e.id}`}

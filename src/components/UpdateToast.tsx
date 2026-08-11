@@ -8,7 +8,12 @@ export function UpdateToast({ onRefresh, onDismiss }: UpdateToastProps) {
     <div className="update-toast" role="status" data-testid="update-toast">
       <p>A new version of the app is available.</p>
       <div className="row" style={{ gap: 8, marginTop: 8 }}>
-        <button className="btn" style={{ flex: 1 }} onClick={onDismiss} data-testid="update-toast-dismiss">
+        <button
+          className="btn"
+          style={{ flex: 1 }}
+          onClick={onDismiss}
+          data-testid="update-toast-dismiss"
+        >
           Ignore this to continue
         </button>
         <button
