@@ -79,6 +79,7 @@ export function isValidWorkout(v: unknown): boolean {
     Array.isArray(v.bbsSets) &&
     Array.isArray(v.accessories) &&
     (v.status === "pending" ||
+      v.status === "in_progress" ||
       v.status === "completed" ||
       v.status === "skipped")
   );

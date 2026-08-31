@@ -610,6 +610,53 @@ label {
   font-size: 14px;
 }
 
+.save-toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 88px; /* matches .update-toast so the two never collide oddly */
+  max-width: 496px;
+  margin: 0 auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--plate-green);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  text-align: center;
+  pointer-events: none; /* purely informational - never blocks a tap behind it */
+  animation:
+    save-toast-in 0.15s ease-out,
+    save-toast-out 0.25s ease-in 1.95s forwards;
+}
+
+.save-toast p {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@keyframes save-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes save-toast-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .plate-bar {
   display: flex;
   align-items: center;

@@ -35,7 +35,7 @@ interface UseAppDataReturn extends Omit<UseGitHubSyncReturn, "syncError"> {
   ) => Promise<void>;
   updateSettings: (settings: Settings) => Promise<void>;
   updateLifts: (lifts: LiftConfig[]) => Promise<void>;
-  saveWorkout: (workout: Workout) => Promise<void>;
+  saveWorkout: (workout: Workout) => Promise<boolean>;
   startNextCycle: (overrideTMs?: Record<string, number>) => Promise<void>;
   /**
    * Corrects a single lift's Training Max in the active cycle (e.g. an
@@ -222,7 +222,7 @@ export function useAppData(): UseAppDataReturn {
         () => db.saveWorkout(workout),
         "saving your workout",
       );
-      if (!result.ok) return;
+      if (!result.ok) return false;
       const current = dataRef.current;
       setData({
         ...current,
@@ -231,6 +231,7 @@ export function useAppData(): UseAppDataReturn {
           : [...current.workouts, workout],
       });
       sync.notifyLocalChange();
+      return true;
     },
     [withPersistence, setData, sync],
   );

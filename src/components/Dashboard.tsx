@@ -106,13 +106,17 @@ export function Dashboard({
               ? "pill-complete"
               : w.status === "skipped"
                 ? "pill-skipped"
-                : "pill-pending";
+                : w.status === "in_progress"
+                  ? "pill-active"
+                  : "pill-pending";
           const label =
             w.status === "completed"
               ? "Done"
               : w.status === "skipped"
                 ? "Skipped"
-                : "Open";
+                : w.status === "in_progress"
+                  ? "In Progress"
+                  : "Open";
           return (
             <button
               key={w.id}

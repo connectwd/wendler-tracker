@@ -74,7 +74,7 @@ test.describe("workout logging", () => {
     await expect(card.getByText("Done")).toBeVisible();
   });
 
-  test("saving without finishing every set leaves the session pending, not completed", async ({
+  test("saving with some sets done but not finished shows In Progress, not Open or Done", async ({
     page,
   }) => {
     await page.getByTestId("workout-card-Bench Press").click();
@@ -83,8 +83,52 @@ test.describe("workout logging", () => {
     await page.getByTestId("save-session-btn").click();
 
     const card = page.getByTestId("workout-card-Bench Press");
+    await expect(card).toHaveAttribute("data-status", "in_progress");
+    await expect(card.getByText("In Progress")).toBeVisible();
+  });
+
+  test("saving with nothing entered at all leaves the session genuinely Open", async ({
+    page,
+  }) => {
+    await page.getByTestId("workout-card-Bench Press").click();
+    // No taps at all - just open it and save immediately.
+    await page.getByTestId("save-session-btn").click();
+
+    const card = page.getByTestId("workout-card-Bench Press");
     await expect(card).toHaveAttribute("data-status", "pending");
     await expect(card.getByText("Open")).toBeVisible();
+  });
+
+  test("reopening an in-progress session and saving again without new taps still shows In Progress", async ({
+    page,
+  }) => {
+    // Guards against reading only the `dirty` flag for this cycle's visit -
+    // the already-logged data itself should be what decides the status.
+    await page.getByTestId("workout-card-Bench Press").click();
+    await page.getByTestId("warmup-check-0").click();
+    await page.getByTestId("save-session-btn").click();
+
+    await page.getByTestId("workout-card-Bench Press").click();
+    await page.getByTestId("save-session-btn").click();
+
+    const card = page.getByTestId("workout-card-Bench Press");
+    await expect(card).toHaveAttribute("data-status", "in_progress");
+    await expect(card.getByText("In Progress")).toBeVisible();
+  });
+
+  test("a successful save shows a brief confirmation toast", async ({
+    page,
+  }) => {
+    await page.getByTestId("workout-card-Bench Press").click();
+    await page.getByTestId("warmup-check-0").click();
+    await page.getByTestId("save-session-btn").click();
+
+    await expect(page.getByTestId("save-toast")).toContainText(
+      "Workout saved",
+    );
+    await expect(page.getByTestId("save-toast")).toHaveCount(0, {
+      timeout: 4000,
+    });
   });
 
   test("skipping a session marks it Skipped and does not require any sets logged", async ({
