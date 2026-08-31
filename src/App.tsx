@@ -9,6 +9,8 @@ import { SettingsView } from "./components/SettingsView";
 import { SyncConflictScreen } from "./components/SyncConflictScreen";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { UpdateToast } from "./components/UpdateToast";
+import { SaveToast } from "./components/SaveToast";
+import type { Workout } from "./types";
 import { bestE1RMExcluding } from "./lib/stats";
 import { registerServiceWorker, applyUpdate } from "./lib/pwa";
 import { initBackHandling } from "./lib/backNav";
@@ -48,6 +50,21 @@ export default function App() {
   const [openWorkoutId, setOpenWorkoutId] = useState<string | null>(null);
   const [reviewingNewCycle, setReviewingNewCycle] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [saveToastMessage, setSaveToastMessage] = useState<string | null>(
+    null,
+  );
+
+  // saveWorkout already shows its own ErrorBanner on failure via appError -
+  // this only needs to confirm the *happy* path, so a false/thrown result
+  // just skips the toast rather than duplicating error UI here.
+  async function handleSaveWorkout(workout: Workout) {
+    const ok = await saveWorkout(workout);
+    if (ok) {
+      setSaveToastMessage(
+        workout.status === "skipped" ? "Marked as skipped" : "Workout saved",
+      );
+    }
+  }
 
   useEffect(() => {
     registerServiceWorker(() => setUpdateAvailable(true));
@@ -144,7 +161,7 @@ export default function App() {
           previousWorkout={previousWorkout}
           currentBestE1RM={currentBestE1RM}
           allWorkouts={workouts}
-          onSave={saveWorkout}
+          onSave={handleSaveWorkout}
           onClose={() => setOpenWorkoutId(null)}
           onUpdateSettings={updateSettings}
         />
@@ -228,6 +245,13 @@ export default function App() {
         <UpdateToast
           onRefresh={applyUpdate}
           onDismiss={() => setUpdateAvailable(false)}
+        />
+      )}
+
+      {saveToastMessage && (
+        <SaveToast
+          message={saveToastMessage}
+          onDone={() => setSaveToastMessage(null)}
         />
       )}
     </div>

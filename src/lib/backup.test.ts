@@ -150,6 +150,12 @@ describe("per-record validators", () => {
     );
   });
 
+  it("isValidWorkout accepts the real in_progress status (underscore, not hyphen)", () => {
+    expect(isValidWorkout({ ...validWorkout, status: "in_progress" })).toBe(
+      true,
+    );
+  });
+
   it("isValidBodyweightEntry requires a numeric weight", () => {
     expect(isValidBodyweightEntry(validBodyweightEntry)).toBe(true);
     expect(

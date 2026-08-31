@@ -88,6 +88,21 @@ describe("aggregateDailyStats", () => {
     expect(daily.get("2026-01-01")?.hasSkip).toBe(true);
     expect(daily.get("2026-01-01")?.hasCompleted).toBe(true);
   });
+
+  it("excludes in_progress sessions too, rather than falling into the hasSkip branch", () => {
+    // in_progress workouts get a `date` as soon as they're saved (unlike
+    // pending), so this guards against the date-presence check alone letting
+    // them slip into the same branch as a resolved "skipped" workout.
+    const inProgress = makeWorkout({
+      id: "w4",
+      date: "2026-02-01",
+      status: "in_progress",
+      mainSets: [loggedSet(100, 5, true)],
+    });
+
+    const daily = aggregateDailyStats([inProgress]);
+    expect(daily.size).toBe(0);
+  });
 });
 
 describe("detectPersonalRecords", () => {

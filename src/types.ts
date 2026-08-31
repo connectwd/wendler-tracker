@@ -59,7 +59,16 @@ export interface LoggedSet {
   completed: boolean;
 }
 
-export type WorkoutStatus = "pending" | "completed" | "skipped";
+// "pending" = never opened / no data entered yet ("Open" on the dashboard).
+// "in_progress" = some sets logged but the session wasn't finished, so it's
+// distinct from "pending" even though both leave the workout re-openable.
+// This union grew an extra case rather than a schema field, so existing
+// stored "pending" values remain valid - no SCHEMA_VERSION bump needed.
+export type WorkoutStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "skipped";
 
 export type AccessoryCategory = "push" | "pull" | "core";
 

@@ -126,6 +126,13 @@ export function WorkoutSession({
   const bbsWeight = workout.bbsSets[0]?.targetWeight ?? 0;
   const bbsTotalSets = workout.bbsSets.length;
   const bbsDone = bbsCompletedCount >= bbsTotalSets;
+  // Reflects the data itself (not the `dirty` flag) so reopening an
+  // already-partial workout and saving again still reports "in_progress"
+  // even if nothing changed in this particular visit.
+  const anyProgress =
+    warmupChecked.some(Boolean) ||
+    mainSets.some((s) => s.completed) ||
+    bbsCompletedCount > 0;
 
   function buildUpdatedWorkout(status: Workout["status"]): Workout {
     const finalWarmup: LoggedSet[] = workout.warmupSets.map((s, i) => ({
@@ -166,7 +173,13 @@ export function WorkoutSession({
 
   function handleSave() {
     onSave(
-      buildUpdatedWorkout(allMainComplete && bbsDone ? "completed" : "pending"),
+      buildUpdatedWorkout(
+        allMainComplete && bbsDone
+          ? "completed"
+          : anyProgress
+            ? "in_progress"
+            : "pending",
+      ),
     );
     // Save is a deliberate way of closing this screen, not a back gesture -
     // closeSilently consumes the history entry this session opened with

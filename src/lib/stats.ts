@@ -28,7 +28,12 @@ export function aggregateDailyStats(
 ): Map<string, DailyStat> {
   const map = new Map<string, DailyStat>();
   for (const w of workouts) {
-    if (!w.date || w.status === "pending") continue;
+    // Only resolved sessions count here - "in_progress" now has a date too
+    // (set as soon as you save with any data entered), but it isn't
+    // completed or skipped yet, so it must not fall into the `else` branch
+    // below and get misread as a skipped day.
+    if (!w.date || w.status === "pending" || w.status === "in_progress")
+      continue;
     const existing = map.get(w.date) ?? {
       date: w.date,
       tonnage: 0,
