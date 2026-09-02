@@ -4,7 +4,7 @@ A personal tracker for Wendler's 5/3/1 program (Boring But Strong variation) —
 
 **Live app:** https://connectwd.github.io/wendler-tracker/
 
-Want the mechanics behind every feature (plateau detection, sync conflict handling, plate math, and more)? See **[docs/FEATURES.md](docs/FEATURES.md)**. Running your own public fork? See **[docs/REPO_SECURITY_CHECKLIST.md](docs/REPO_SECURITY_CHECKLIST.md)** first.
+Want the mechanics behind every feature (plateau detection, sync conflict handling, plate math, and more)? See **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 ---
 
@@ -72,7 +72,7 @@ npm run build                  # production build to dist/
 3. In the repo's Settings → Pages, set **Source** to "GitHub Actions".
 4. Push to `main`. `.github/workflows/deploy.yml` builds and deploys automatically; your site will be at `https://yourname.github.io/your-repo-name/`.
 
-**If your repo will be public**, walk through **[docs/REPO_SECURITY_CHECKLIST.md](docs/REPO_SECURITY_CHECKLIST.md)** before pointing anyone at it — a short list of GitHub settings (branch protection, Actions permissions, secret scanning) worth checking so another visitor can't touch your code, your Pages deploy, or your CI. It doesn't affect app data — that's already isolated per-browser by design, see the doc for why.
+**If your repo will be public**, review GitHub's own repo-hardening settings (Settings → Branches, Settings → Actions, Settings → Code security) before pointing anyone at it. None of this affects app data — that's already isolated per-browser by design, since there's no backend — it's about protecting the source and CI pipeline.
 
 ### Testing & linting
 
